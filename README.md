@@ -21,7 +21,7 @@ frontend origin in its `allow_cors` site config.
 ```bash
 npm run build
 firebase login            # once
-npm run deploy            # builds and deploys to the "pay-frappe" site of project app-cd28a
+npm run deploy            # builds and deploys to the "pay-frappe" site of project app-cb28a
 ```
 
 `firebase.json` targets the `pay-frappe` hosting site, rewrites all routes to `index.html` (SPA),
