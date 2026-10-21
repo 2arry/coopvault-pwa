@@ -63,7 +63,7 @@ onActivated(() => members.value && load())
       <div class="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
         <button v-for="f in [{ k: 'all', l: `Everyone (${members.length})` }, { k: 'owing', l: 'Still to pay' }, { k: 'loans', l: 'Has a loan' }]" :key="f.k"
           class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition"
-          :class="filter === f.k ? 'bg-forest-800 text-white' : 'border border-line/12 bg-card text-ink-soft'" @click="filter = f.k">{{ f.l }}</button>
+          :class="filter === f.k ? 'bg-navy-800 text-white' : 'border border-line/12 bg-card text-ink-soft'" @click="filter = f.k">{{ f.l }}</button>
       </div>
       <div class="card divide-soft">
         <RouterLink v-for="m in shown" :key="m.name" :to="`/admin/members/${m.name}`" class="flex items-center gap-3 p-4">
@@ -74,7 +74,7 @@ onActivated(() => members.value && load())
               <span v-if="m.role !== 'Member'" class="rounded-md bg-sunk px-1.5 py-0.5 text-[10px] font-bold text-ink-soft">{{ m.role }}</span>
             </div>
             <p class="num truncate text-xs text-ink-soft">
-              Saved {{ money(m.total_contributed, currency) }}<span v-if="m.loan_outstanding"> · owes {{ money(m.loan_outstanding, currency) }}</span>
+              Savings {{ money(m.total_contributed, currency) }}<span v-if="m.loan_outstanding"> · owes {{ money(m.loan_outstanding, currency) }}</span>
             </p>
           </div>
           <StatusPill v-if="m.status !== 'Active'" :status="m.status" />

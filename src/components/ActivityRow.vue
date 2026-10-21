@@ -7,16 +7,18 @@ import StatusPill from './StatusPill.vue'
 const props = defineProps({ entry: Object, currency: String, showName: String })
 const meta = computed(() => ({
   Contribution: { icon: 'arrowDown', tone: 'bg-pos-soft text-pos', label: 'Saved', sign: '+' },
-  Loan: { icon: 'arrowUp', tone: 'bg-gold-soft text-gold-text', label: 'Borrowed', sign: '' },
+  Loan: { icon: 'arrowUp', tone: 'bg-accent-soft text-accent-text', label: 'Borrowed', sign: '' },
   Repayment: { icon: 'check', tone: 'bg-info-soft text-info', label: 'Repaid loan', sign: '' },
+  Withdrawal: { icon: 'arrowUp', tone: 'bg-brand-soft text-brand-text', label: 'Took out savings', sign: '−' },
 }[props.entry.type]))
 const link = computed(() => {
   const e = props.entry
   if (e.type === 'Loan') return `/loans/${e.name}`
+  if (e.type === 'Withdrawal') return `/withdrawals/${e.name}`
   return `/receipt/${encodeURIComponent(e.doctype)}/${encodeURIComponent(e.name)}`
 })
-const settled = computed(() => ['Confirmed', 'Active', 'Repaid'].includes(props.entry.status))
-const methodLabel = (m) => ({ Paystack: 'Online', 'Bank Transfer': 'Transfer' }[m] || m)
+const settled = computed(() => ['Confirmed', 'Active', 'Repaid', 'Completed'].includes(props.entry.status))
+const methodLabel = (m) => ({ Paystack: 'Online', 'Bank Transfer': 'Transfer', 'Opening Balance': 'Opening balance' }[m] || m)
 </script>
 
 <template>
@@ -29,7 +31,7 @@ const methodLabel = (m) => ({ Paystack: 'Online', 'Bank Transfer': 'Transfer' }[
       <p class="truncate text-xs text-ink-soft">{{ date(entry.date, { day: 'numeric', month: 'short' }) }}<span v-if="entry.method"> · {{ methodLabel(entry.method) }}</span></p>
     </div>
     <div class="text-right">
-      <p class="num text-[15px] font-semibold" :class="[entry.status === 'Rejected' || entry.status === 'Cancelled' ? 'text-ink-faint line-through' : '', entry.type === 'Contribution' && settled ? 'text-pos' : '']">
+      <p class="num text-[15px] font-semibold" :class="[['Rejected', 'Cancelled', 'Reversed'].includes(entry.status) ? 'text-ink-faint line-through' : '', entry.type === 'Contribution' && settled ? 'text-pos' : '']">
         {{ entry.type === 'Contribution' && settled ? meta.sign : '' }}{{ money(entry.amount, currency) }}
       </p>
       <StatusPill v-if="!settled" :status="entry.status" />

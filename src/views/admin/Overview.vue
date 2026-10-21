@@ -41,11 +41,11 @@ const shareGroup = () => shareText(groupUpdate(tracker.value, coopName.value, cu
     <Loader v-if="!tracker && !error" />
     <template v-if="tracker">
       <!-- Reviews waiting -->
-      <button v-if="pendingTotal" class="flex w-full items-center gap-3.5 rounded-3xl bg-gold-soft p-4 text-left text-gold-text" @click="emit('goto', 'reviews')">
+      <button v-if="pendingTotal" class="flex w-full items-center gap-3.5 rounded-3xl bg-accent-soft p-4 text-left text-accent-text" @click="emit('goto', 'reviews')">
         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-card"><Icon name="receipt" :size="18" /></span>
         <span class="flex-1 text-sm">
           <b class="block">{{ pendingTotal }} waiting for you</b>
-          <span>{{ [pending.members && `${pending.members} join request${pending.members > 1 ? 's' : ''}`, pending.contributions && `${pending.contributions} payment${pending.contributions > 1 ? 's' : ''}`, pending.repayments && `${pending.repayments} repayment${pending.repayments > 1 ? 's' : ''}`, pending.loans && `${pending.loans} loan${pending.loans > 1 ? 's' : ''}`].filter(Boolean).join(' · ') }}</span>
+          <span>{{ [pending.disputes && `${pending.disputes} transfer${pending.disputes > 1 ? 's' : ''} not received`, pending.members && `${pending.members} join request${pending.members > 1 ? 's' : ''}`, pending.loans && `${pending.loans} loan${pending.loans > 1 ? 's' : ''}`, pending.withdrawals && `${pending.withdrawals} withdrawal${pending.withdrawals > 1 ? 's' : ''}`].filter(Boolean).join(' · ') }}</span>
         </span>
         <Icon name="chevron" :size="18" />
       </button>

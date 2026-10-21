@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as api from '../api'
-import { state, current, currency, toast, loadDashboard } from '../store'
+import { current, currency, toast, loadDashboard } from '../store'
 import { money } from '../format'
 import PageHeader from '../components/PageHeader.vue'
 import AmountField from '../components/AmountField.vue'
@@ -40,7 +40,11 @@ const chips = computed(() => {
   const set = [...new Set([round(m * 0.25), round(m * 0.5), Math.floor(m)])].filter((x) => x <= m)
   return set.map((x) => ({ label: x === Math.floor(m) ? `Max · ${money(x, currency.value)}` : money(x, currency.value), value: x }))
 })
-const needsPayout = computed(() => !state.user?.payout_account?.payout_account_number)
+const needsPayout = computed(() => !info.value?.has_payout_account)
+const hold = computed(() => {
+  const h = info.value?.security_hold_until
+  return h && new Date(String(h).replace(' ', 'T')) > new Date() ? h : null
+})
 
 async function submit() {
   busy.value = true
@@ -71,10 +75,10 @@ async function submit() {
           <p class="text-sm text-ink-soft">You can borrow up to</p>
           <p class="money text-[36px] leading-tight text-brand-text">{{ money(limit, currency) }}</p>
           <div class="mt-3 space-y-1.5 border-t border-line/[0.07] pt-3 text-sm">
-            <div class="flex justify-between"><span class="text-ink-soft">Your savings{{ info.multiplier !== 1 ? ` × ${info.multiplier}` : '' }}</span><span class="num">{{ money(info.total_contributed * info.multiplier, currency) }}</span></div>
+            <div class="flex justify-between"><span class="text-ink-soft">Your savings{{ info.multiplier !== 1 ? ` × ${info.multiplier}` : '' }}</span><span class="num">{{ money(info.savings * info.multiplier, currency) }}</span></div>
             <div v-if="info.exposure > 0" class="flex justify-between"><span class="text-ink-soft">Owed or already requested</span><span class="num">− {{ money(info.exposure, currency) }}</span></div>
           </div>
-          <p v-if="info.pool_balance < limit" class="mt-3 flex gap-2 rounded-2xl bg-gold-soft p-3 text-xs text-gold-text">
+          <p v-if="info.pool_balance < limit" class="mt-3 flex gap-2 rounded-2xl bg-accent-soft p-3 text-xs text-accent-text">
             <Icon name="info" :size="16" class="shrink-0" /> The pool has {{ money(info.pool_balance, currency) }} right now, so bigger loans wait until more is saved.
           </p>
         </div>
@@ -101,17 +105,23 @@ async function submit() {
 
           <div v-if="value > 0" class="card-flat divide-soft px-4 text-sm">
             <div class="flex justify-between py-3"><span class="text-ink-soft">You receive</span><span class="num font-semibold">{{ money(value, currency) }}</span></div>
-            <div class="flex justify-between py-3"><span class="text-ink-soft">Interest ({{ info.interest_rate }}% flat)</span><span class="num">{{ money(interest, currency) }}</span></div>
+            <div class="py-3">
+              <div class="flex justify-between"><span class="text-ink-soft">Interest ({{ info.interest_rate }}% flat)</span><span class="num">{{ money(interest, currency) }}</span></div>
+              <p v-if="info.interest_rate > 0" class="mt-1 text-xs text-ink-faint">Flat means it’s the same {{ info.interest_rate }}% whether you repay in 1 month or {{ info.max_loan_tenure_months }}.</p>
+            </div>
             <div class="flex justify-between py-3"><span class="text-ink-soft">Total to pay back</span><span class="num font-semibold">{{ money(total, currency) }}</span></div>
             <div class="flex items-baseline justify-between py-3"><span class="font-semibold">Each month</span><span class="money text-xl">{{ money(monthly, currency) }} <span class="font-sans text-xs text-ink-soft">× {{ tenure }}</span></span></div>
           </div>
 
-          <RouterLink v-if="needsPayout" to="/profile/payout" class="flex items-center gap-3 rounded-3xl bg-info-soft p-4 text-sm text-info">
-            <Icon name="bank" /><span class="flex-1"><b>Add the account to send your loan to.</b> It makes approval faster.</span><Icon name="chevron" :size="18" />
+          <RouterLink v-if="needsPayout" to="/profile/payout" class="flex items-center gap-3 rounded-3xl bg-brand-soft p-4 text-sm text-brand-text">
+            <Icon name="bank" /><span class="flex-1"><b>Add the account to send your loan to.</b> You need it before you can ask.</span><Icon name="chevron" :size="18" />
           </RouterLink>
+          <p v-if="hold" class="flex gap-2.5 rounded-3xl bg-warn-soft p-4 text-sm text-warn"><Icon name="shield" :size="18" class="mt-0.5" />
+            Loans are paused after a password reset until {{ new Date(String(hold).replace(' ', 'T')).toLocaleString('en-GB', { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) }}.</p>
 
           <ErrorBox :message="error" />
-          <button class="btn-primary btn-lg w-full" :disabled="busy || !value || overLimit">{{ busy ? 'Sending…' : 'Send loan request' }}</button>
+          <button class="btn-primary btn-lg w-full" :disabled="busy || !value || overLimit || needsPayout || !!hold">{{ busy ? 'Sending…' : 'Send loan request' }}</button>
+          <p class="-mt-3 text-center text-xs text-ink-faint">The treasurer sends the money to your account. Repayments start when you confirm it arrived.</p>
         </template>
         <div v-else class="card p-6 text-center">
           <p class="font-semibold">Nothing to borrow just yet</p>

@@ -7,6 +7,11 @@ const tone = computed(() => ({
   Success: 'bg-pos-soft text-pos',
   Assigned: 'bg-pos-soft text-pos',
   Repaid: 'bg-info-soft text-info',
+  Completed: 'bg-pos-soft text-pos',
+  Sent: 'bg-brand-soft text-brand-text',
+  Reversed: 'bg-neg-soft text-neg',
+  Refunded: 'bg-neg-soft text-neg',
+  Disputed: 'bg-warn-soft text-warn',
   Pending: 'bg-warn-soft text-warn',
   Requested: 'bg-warn-soft text-warn',
   Initiated: 'bg-warn-soft text-warn',
@@ -15,7 +20,7 @@ const tone = computed(() => ({
   Failed: 'bg-neg-soft text-neg',
   Suspended: 'bg-neg-soft text-neg',
 }[props.status] || 'bg-line/[0.07] text-ink-soft'))
-const text = computed(() => props.label || ({ Pending: 'Awaiting approval', Initiated: 'Processing' }[props.status] || props.status))
+const text = computed(() => props.label || ({ Pending: 'Awaiting approval', Initiated: 'Processing', Sent: 'On its way' }[props.status] || props.status))
 </script>
 
 <template>

@@ -26,18 +26,18 @@ onMounted(async () => {
   <div>
     <PageHeader title="Loans" :subtitle="current?.cooperative_name" />
     <div class="space-y-5 px-5 pb-6">
-      <RouterLink to="/loans/new" class="flex items-center gap-4 rounded-4xl bg-gradient-to-br from-forest-800 to-forest-700 p-5 text-white shadow-lift">
+      <RouterLink to="/loans/new" class="flex items-center gap-4 rounded-4xl bg-gradient-to-br from-navy-800 to-navy-700 p-5 text-white shadow-lift">
         <div class="flex-1">
-          <p class="text-sm text-forest-100/75">You can borrow up to</p>
+          <p class="text-sm text-navy-100/75">You can borrow up to</p>
           <p class="money text-[32px] leading-tight">{{ money(canBorrow, currency) }}</p>
         </div>
-        <span class="btn-gold btn-sm">Borrow <Icon name="arrowRight" :size="16" /></span>
+        <span class="btn-light btn-sm">Borrow <Icon name="arrowRight" :size="16" /></span>
       </RouterLink>
 
       <ErrorBox :message="error" />
       <Loader v-if="!loans && !error" />
       <div v-else-if="loans && !loans.length" class="card p-8 text-center">
-        <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-gold-soft text-gold-text"><Icon name="loans" :size="28" /></div>
+        <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-accent-soft text-accent-text"><Icon name="loans" :size="28" /></div>
         <p class="mt-4 font-display text-xl font-semibold">No loans yet</p>
         <p class="mt-1 text-sm text-ink-soft">When you need one, you can borrow up to what you’ve saved and pay it back monthly.</p>
       </div>

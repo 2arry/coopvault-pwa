@@ -42,7 +42,7 @@ onMounted(async () => {
       <Loader v-if="!ready" />
       <template v-else-if="dashboard">
         <div v-if="s?.tracked" class="mb-6 flex items-center gap-3 rounded-3xl p-4"
-          :class="s.state === 'behind' ? 'bg-neg-soft text-neg' : s.state === 'due' ? 'bg-gold-soft text-gold-text' : 'bg-pos-soft text-pos'">
+          :class="s.state === 'behind' ? 'bg-neg-soft text-neg' : s.state === 'due' ? 'bg-accent-soft text-accent-text' : 'bg-pos-soft text-pos'">
           <Icon :name="s.state === 'behind' ? 'alert' : s.state === 'due' ? 'clock' : 'checkCircle'" />
           <p class="text-sm">
             <template v-if="s.state === 'up_to_date'"><b>{{ paidThroughLabel(s.paid_through, s.frequency) }}.</b> Anything extra counts towards {{ periodName(s.next_due_date, s.frequency) }}.</template>

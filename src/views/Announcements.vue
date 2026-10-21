@@ -59,13 +59,13 @@ onMounted(load)
         <p class="mt-4 font-semibold">No announcements yet</p>
         <p class="mt-1 text-sm text-ink-soft">{{ isAdmin ? 'Post meeting dates, rule changes or reminders. Every member sees them here.' : 'Updates from your admins will appear here.' }}</p>
       </div>
-      <article v-for="a in items" :key="a.name" class="card p-5" :class="a.pinned ? 'ring-1 ring-gold/30' : ''">
+      <article v-for="a in items" :key="a.name" class="card p-5" :class="a.pinned ? 'ring-1 ring-accent/30' : ''">
         <div class="flex items-start gap-2">
           <div class="flex-1">
-            <p v-if="a.pinned" class="mb-1 flex items-center gap-1 text-xs font-semibold text-gold-text"><Icon name="pin" :size="13" /> Pinned</p>
+            <p v-if="a.pinned" class="mb-1 flex items-center gap-1 text-xs font-semibold text-accent-text"><Icon name="pin" :size="13" /> Pinned</p>
             <h2 class="font-display text-lg font-semibold leading-snug">{{ a.title }}</h2>
           </div>
-          <button v-if="isAdmin" class="-m-1 p-1 text-ink-faint hover:text-neg" aria-label="Delete announcement" @click="removing = a"><Icon name="trash" :size="18" /></button>
+          <button v-if="isAdmin && !a.is_system" class="-m-1 p-1 text-ink-faint hover:text-neg" aria-label="Delete announcement" @click="removing = a"><Icon name="trash" :size="18" /></button>
         </div>
         <p class="mt-2 whitespace-pre-line text-[15px] leading-relaxed text-ink-soft">{{ a.message }}</p>
         <p class="mt-3 text-xs text-ink-faint">{{ relative(a.creation) }}</p>

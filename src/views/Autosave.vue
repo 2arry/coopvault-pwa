@@ -114,13 +114,13 @@ async function turnOff() {
       <Loader v-if="!info && !error" />
       <template v-if="info">
         <!-- On -->
-        <section v-if="auto.enabled && !editing" class="overflow-hidden rounded-4xl bg-gradient-to-br from-forest-800 to-forest-700 p-6 text-white shadow-lift">
-          <div class="flex items-center gap-2 text-sm text-forest-100/80"><Icon name="repeat" :size="18" class="text-coin-400" /> Autosave is on</div>
+        <section v-if="auto.enabled && !editing" class="overflow-hidden rounded-4xl bg-gradient-to-br from-navy-800 to-navy-700 p-6 text-white shadow-lift">
+          <div class="flex items-center gap-2 text-sm text-navy-100/80"><Icon name="repeat" :size="18" class="text-glow-400" /> Autosave is on</div>
           <p class="money mt-3 text-[40px] leading-none">{{ money(auto.amount, currency) }}</p>
-          <p class="mt-1 text-forest-100/80">every {{ periodWord(freq) }}</p>
+          <p class="mt-1 text-navy-100/80">every {{ periodWord(freq) }}</p>
           <div class="mt-5 grid grid-cols-2 gap-2 text-sm">
-            <div class="rounded-2xl bg-white/[0.08] p-3"><p class="text-xs text-forest-100/70">Next payment</p><p class="font-semibold">{{ date(auto.next_date) }}</p></div>
-            <div class="rounded-2xl bg-white/[0.08] p-3"><p class="text-xs text-forest-100/70">Paid with</p><p class="truncate font-semibold">{{ auto.method?.label }}</p></div>
+            <div class="rounded-2xl bg-white/[0.08] p-3"><p class="text-xs text-navy-100/70">Next payment</p><p class="font-semibold">{{ date(auto.next_date) }}</p></div>
+            <div class="rounded-2xl bg-white/[0.08] p-3"><p class="text-xs text-navy-100/70">Paid with</p><p class="truncate font-semibold">{{ auto.method?.label }}</p></div>
           </div>
           <div class="mt-5 grid grid-cols-2 gap-2">
             <button class="btn btn-sm bg-white/10 text-white hover:bg-white/15" @click="editing = true">Change</button>

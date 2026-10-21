@@ -1,6 +1,6 @@
 import { createApp } from 'vue'
 import '@fontsource-variable/plus-jakarta-sans'
-import '@fontsource-variable/fraunces/opsz.css'
+import '@fontsource-variable/manrope'
 import App from './App.vue'
 import router from './router'
 import './style.css'

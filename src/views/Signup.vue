@@ -51,7 +51,7 @@ async function submit() {
       </div>
       <div>
         <label class="label" for="email">Email</label>
-        <input id="email" v-model="form.email" type="email" class="input" autocomplete="email" required placeholder="For receipts and password resets" />
+        <input id="email" v-model="form.email" type="email" class="input" autocomplete="email" required placeholder="you@example.com" />
       </div>
       <div>
         <label class="label" for="password">Password</label>
@@ -59,7 +59,7 @@ async function submit() {
           <input id="password" v-model="form.password" :type="show ? 'text' : 'password'" minlength="8" class="input pr-12" autocomplete="new-password" required />
           <button type="button" class="absolute right-2 top-1/2 grid h-9 w-9 -translate-y-1/2 place-items-center rounded-xl text-ink-faint hover:text-ink" :aria-label="show ? 'Hide password' : 'Show password'" @click="show = !show"><Icon name="eye" :size="18" /></button>
         </div>
-        <p class="hint">At least 8 characters.</p>
+        <p class="hint">At least 8 characters. Avoid your name, phone number or common words.</p>
       </div>
       <button class="btn-primary w-full" :disabled="busy">{{ busy ? 'Creating account…' : joining ? 'Create account and join' : 'Create account' }}</button>
     </form>

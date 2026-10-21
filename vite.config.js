@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'CoopVault',
         short_name: 'CoopVault',
         description: 'Savings, contributions and loans for your cooperative',
-        theme_color: '#0b3d2e',
-        background_color: '#f6f3eb',
+        theme_color: '#1d4ed8',
+        background_color: '#f5f7fb',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -36,6 +36,8 @@ export default defineConfig({
         // Only precache the Latin font subsets (latin-ext carries the ₦ sign); others load on demand
         globIgnores: ['**/*-{vietnamese,cyrillic,cyrillic-ext,greek,greek-ext}-*.woff2', '**/*-full-*.woff2', '**/*-italic*.woff2'],
         navigateFallback: '/index.html',
+        // Push notifications (shows them and opens the right screen when tapped)
+        importScripts: ['push-sw.js'],
         // Never cache API responses: balances must always be live
         runtimeCaching: [],
       },

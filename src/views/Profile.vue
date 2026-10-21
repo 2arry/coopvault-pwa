@@ -2,7 +2,8 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as api from '../api'
-import { state, current, dashboard, loadDashboard, logout, toast, setTheme, copyText } from '../store'
+import { state, current, dashboard, loadDashboard, logout, signOut as endSession, toast, setTheme, copyText } from '../store'
+import { pushSupported, needsInstallForPush, currentSubscription, enablePush, disablePush } from '../push'
 import { initials } from '../format'
 import PageHeader from '../components/PageHeader.vue'
 import InstallPrompt from '../components/InstallPrompt.vue'
@@ -23,11 +24,20 @@ const error = ref('')
 const busy = ref(false)
 
 const payout = computed(() => state.user?.payout_account)
+const pushOn = ref(false)
+async function togglePush() {
+  busy.value = true
+  try {
+    if (pushOn.value) { await disablePush(); pushOn.value = false; toast('Notifications turned off on this phone') }
+    else { await enablePush(); pushOn.value = true; toast('Notifications are on for this phone') }
+  } catch (e) { toast(e.message, 'error') } finally { busy.value = false }
+}
 const d = computed(() => (current.value?.status === 'Active' ? dashboard.value : null))
 const dva = computed(() => d.value?.dedicated_account)
 const dvaAvailable = computed(() => !!d.value?.payments?.dedicated_accounts)
 
 onMounted(async () => {
+  pushOn.value = !!(await currentSubscription().catch(() => null))
   if (current.value?.status === 'Active') loadDashboard().catch(() => {})
   if (state.paystack.enabled) methods.value = await api.get('payments.list_methods').catch(() => [])
 })
@@ -77,11 +87,18 @@ async function leave() {
   } catch (e) { toast(e.message, 'error') } finally { busy.value = false }
 }
 async function logoutEverywhere() {
-  try { await api.post('auth.logout_all_devices') } catch {}
-  signOut()
+  busy.value = true
+  try {
+    await api.post('auth.logout_all_devices')
+    logout()
+    router.replace('/login')
+  } catch (e) {
+    // Don't pretend it worked: other devices stay signed in until this succeeds
+    toast(`Couldn’t log out other devices: ${e.message}`, 'error')
+  } finally { busy.value = false }
 }
-function signOut() {
-  logout()
+async function signOut() {
+  await endSession()
   router.replace('/login')
 }
 </script>
@@ -91,7 +108,7 @@ function signOut() {
     <PageHeader title="Me" />
     <div class="space-y-5 px-5 pb-8">
       <section class="card flex items-center gap-4 p-4">
-        <div class="grid h-14 w-14 place-items-center rounded-2xl bg-forest-800 font-display text-xl font-semibold text-coin-300">{{ initials(state.user?.full_name) }}</div>
+        <div class="grid h-14 w-14 place-items-center rounded-2xl bg-navy-800 font-display text-xl font-semibold text-glow-300">{{ initials(state.user?.full_name) }}</div>
         <div class="min-w-0 flex-1">
           <p class="truncate font-semibold">{{ state.user?.full_name }}</p>
           <p class="truncate text-sm text-ink-soft">{{ state.user?.mobile_no || state.user?.email }}</p>
@@ -104,9 +121,9 @@ function signOut() {
         <h2 class="px-1 text-sm font-semibold">Money</h2>
         <div class="card mt-3 divide-soft">
           <RouterLink to="/profile/payout" class="flex items-center gap-3.5 p-4">
-            <span class="grid h-10 w-10 place-items-center rounded-2xl bg-gold-soft text-gold-text"><Icon name="bank" :size="18" /></span>
+            <span class="grid h-10 w-10 place-items-center rounded-2xl bg-accent-soft text-accent-text"><Icon name="bank" :size="18" /></span>
             <span class="min-w-0 flex-1">
-              <span class="block text-[15px] font-semibold">Where to send my loans</span>
+              <span class="block text-[15px] font-semibold">Where to send my money</span>
               <span class="block truncate text-xs text-ink-soft">{{ payout?.payout_account_number ? `${payout.payout_bank_name} · ${payout.payout_account_number}` : 'Add your bank account' }}</span>
             </span>
             <Icon name="chevron" :size="18" class="text-ink-faint" />
@@ -145,7 +162,7 @@ function signOut() {
         <h2 class="px-1 text-sm font-semibold">Cooperatives</h2>
         <div class="card mt-3 divide-soft">
           <div v-for="m in state.memberships" :key="m.name" class="flex items-center gap-3 p-4">
-            <div class="grid h-10 w-10 place-items-center rounded-2xl bg-forest-800 font-display font-semibold text-coin-300">{{ m.cooperative_name[0] }}</div>
+            <div class="grid h-10 w-10 place-items-center rounded-2xl bg-navy-800 font-display font-semibold text-glow-300">{{ m.cooperative_name[0] }}</div>
             <div class="min-w-0 flex-1">
               <p class="truncate text-[15px] font-semibold">{{ m.cooperative_name }}</p>
               <p class="text-xs text-ink-soft">{{ m.role }}</p>
@@ -154,6 +171,19 @@ function signOut() {
             <button class="text-xs font-semibold text-ink-faint hover:text-neg" @click="leaving = m">Leave</button>
           </div>
           <RouterLink to="/welcome" class="flex items-center gap-2 p-4 text-sm link"><Icon name="plus" :size="18" /> Join or start a cooperative</RouterLink>
+        </div>
+      </section>
+
+      <!-- Notifications -->
+      <section v-if="pushSupported || needsInstallForPush">
+        <h2 class="px-1 text-sm font-semibold">Notifications</h2>
+        <div class="card mt-3 flex items-center gap-3.5 p-4">
+          <span class="grid h-10 w-10 place-items-center rounded-2xl bg-brand-soft text-brand-text"><Icon name="bell" :size="18" /></span>
+          <span class="flex-1">
+            <span class="block text-[15px] font-semibold">Notifications on this phone</span>
+            <span class="block text-xs text-ink-soft">{{ needsInstallForPush ? 'Add CoopVault to your home screen first' : pushOn ? 'On: payments, loans and reminders' : 'Off' }}</span>
+          </span>
+          <button v-if="!needsInstallForPush" class="btn-sm" :class="pushOn ? 'btn-secondary' : 'btn-primary'" :disabled="busy" @click="togglePush">{{ pushOn ? 'Turn off' : 'Turn on' }}</button>
         </div>
       </section>
 
@@ -208,7 +238,7 @@ function signOut() {
       </div>
       <p v-else class="text-sm text-ink-soft">You haven’t saved any. Turn on Autosave when you pay to save a card.</p>
     </Sheet>
-    <Sheet :open="!!leaving" :title="`Leave ${leaving?.cooperative_name}?`" subtitle="Your records stay with the cooperative. You can ask to join again later." @close="leaving = null">
+    <Sheet :open="!!leaving" :title="`Leave ${leaving?.cooperative_name}?`" subtitle="You need a zero balance first: repay any loan and take out your savings with a withdrawal. Your records stay with the cooperative, and you can ask to join again later." @close="leaving = null">
       <div class="grid grid-cols-2 gap-3">
         <button class="btn-secondary" @click="leaving = null">Stay</button>
         <button class="btn-danger" :disabled="busy" @click="leave">Leave</button>

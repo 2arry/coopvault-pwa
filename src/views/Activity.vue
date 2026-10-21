@@ -16,6 +16,7 @@ const filters = [
   { key: 'Contribution', label: 'Savings' },
   { key: 'Loan', label: 'Loans' },
   { key: 'Repayment', label: 'Repayments' },
+  { key: 'Withdrawal', label: 'Withdrawals' },
 ]
 const groups = computed(() => {
   const out = []
@@ -43,13 +44,13 @@ onMounted(async () => {
       <Loader v-if="!data && !error" />
       <template v-if="data">
         <div class="card grid grid-cols-3 divide-x divide-line/[0.07] py-4 text-center">
-          <div><p class="text-xs text-ink-soft">Saved</p><p class="money mt-0.5 text-lg">{{ money(data.balances.total_contributed, currency, { compact: true }) }}</p></div>
+          <div><p class="text-xs text-ink-soft">Savings</p><p class="money mt-0.5 text-lg">{{ money(data.balances.savings, currency, { compact: true }) }}</p></div>
           <div><p class="text-xs text-ink-soft">Repaid</p><p class="money mt-0.5 text-lg">{{ money(data.balances.total_repaid, currency, { compact: true }) }}</p></div>
           <div><p class="text-xs text-ink-soft">Owing</p><p class="money mt-0.5 text-lg">{{ money(data.balances.loan_outstanding, currency, { compact: true }) }}</p></div>
         </div>
         <div class="no-scrollbar -mx-5 mt-5 flex gap-2 overflow-x-auto px-5">
           <button v-for="f in filters" :key="f.key" class="shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition"
-            :class="filter === f.key ? 'bg-forest-800 text-white' : 'border border-line/12 bg-card text-ink-soft'" @click="filter = f.key">
+            :class="filter === f.key ? 'bg-navy-800 text-white' : 'border border-line/12 bg-card text-ink-soft'" @click="filter = f.key">
             {{ f.label }}
           </button>
         </div>

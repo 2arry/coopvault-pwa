@@ -34,10 +34,10 @@ async function save(form) {
     <div class="space-y-5 px-5 pb-12 pt-1">
       <div class="flex gap-3 rounded-3xl bg-sunk p-4 text-sm text-ink-soft">
         <Icon name="info" class="mt-0.5 text-ink" />
-        <p>When the treasurer approves your loan, they send the money here. Use an account in your own name.</p>
+        <p>Loans and withdrawals are sent here. Use an account in your own name. Your admins are told when it changes.</p>
       </div>
       <ErrorBox :message="error" />
-      <BankAccountForm :initial="initial" :busy="busy" @submit="save" />
+      <BankAccountForm :initial="initial" :busy="busy" require-password @submit="save" />
     </div>
   </div>
 </template>

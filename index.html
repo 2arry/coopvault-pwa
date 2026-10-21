@@ -5,8 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
     <title>CoopVault: savings and loans for your cooperative</title>
     <meta name="description" content="One shared record of every contribution, loan and repayment in your cooperative. Pay in a tap, borrow fairly, and never argue about who paid." />
-    <meta name="theme-color" content="#f6f3eb" media="(prefers-color-scheme: light)" />
-    <meta name="theme-color" content="#0a100d" media="(prefers-color-scheme: dark)" />
+    <meta name="theme-color" content="#f5f7fb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#070c19" media="(prefers-color-scheme: dark)" />
     <meta property="og:title" content="CoopVault" />
     <meta property="og:description" content="Your cooperative's money, out of the group chat. Track contributions, loans and repayments together." />
     <meta property="og:image" content="/pwa-512x512.png" />
@@ -17,10 +17,8 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="CoopVault" />
-    <script>
-      // Apply a saved theme before first paint to avoid a flash
-      try { var t = localStorage.getItem('coopvault.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch (e) {}
-    </script>
+    <!-- Applies a saved theme before first paint. A file rather than inline, so the CSP needs no exceptions. -->
+    <script src="/theme.js"></script>
   </head>
   <body>
     <div id="app"></div>

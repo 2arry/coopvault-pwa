@@ -24,7 +24,7 @@ function choose(m) {
     <div class="space-y-2">
       <button v-for="m in state.memberships" :key="m.name" class="flex w-full items-center gap-3 rounded-2xl border p-3 text-left transition"
         :class="m.cooperative === current?.cooperative ? 'border-brand-text/40 bg-brand-soft' : 'border-line/10 hover:bg-sunk'" @click="choose(m)">
-        <div class="grid h-11 w-11 place-items-center rounded-2xl bg-forest-800 font-display text-lg font-semibold text-coin-300">{{ m.cooperative_name[0] }}</div>
+        <div class="grid h-11 w-11 place-items-center rounded-2xl bg-navy-800 font-display text-lg font-semibold text-glow-300">{{ m.cooperative_name[0] }}</div>
         <div class="min-w-0 flex-1">
           <p class="truncate font-semibold">{{ m.cooperative_name }}</p>
           <p class="text-xs text-ink-soft">{{ m.role }} · {{ m.member_count || 0 }} members</p>

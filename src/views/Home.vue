@@ -1,7 +1,8 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue'
-import { state, current, currency, isAdmin, dashboard, loadDashboard, copyText, lastSeenAnnouncement } from '../store'
-import { money, shortDate, dueIn, relative, firstName, periodName, paidThroughLabel, periodWord } from '../format'
+import * as api from '../api'
+import { state, current, currency, isAdmin, dashboard, loadDashboard, copyText, lastSeenAnnouncement, toast } from '../store'
+import { money, date, shortDate, dueIn, relative, firstName, periodName, paidThroughLabel, periodWord } from '../format'
 import CoopSwitcher from '../components/CoopSwitcher.vue'
 import ActivityRow from '../components/ActivityRow.vue'
 import InstallPrompt from '../components/InstallPrompt.vue'
@@ -18,13 +19,32 @@ const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 const canBorrow = computed(() => Math.max(0, Math.min(data.value?.balances?.borrow_limit || 0, data.value?.pool?.pool_balance || 0)))
 const activeLoans = computed(() => (data.value?.active_loans || []).filter((l) => l.status === 'Active'))
 const pendingLoans = computed(() => (data.value?.active_loans || []).filter((l) => l.status === 'Pending'))
+const sentLoans = computed(() => (data.value?.active_loans || []).filter((l) => l.status === 'Sent'))
+const sentWithdrawals = computed(() => (data.value?.withdrawals || []).filter((w) => w.status === 'Sent'))
+const pendingWithdrawals = computed(() => (data.value?.withdrawals || []).filter((w) => w.status === 'Pending'))
+const openingBalances = computed(() => data.value?.opening_balances || [])
+const unread = computed(() => data.value?.unread_notifications || 0)
+const holdUntil = computed(() => {
+  const h = data.value?.security_hold_until
+  return h && new Date(String(h).replace(' ', 'T')) > new Date() ? h : null
+})
+const busy = ref('')
+
+async function respondOpening(row, accept) {
+  busy.value = row.name
+  try {
+    await api.post('finance.respond_opening_balance', { name: row.name, accept: accept ? 1 : 0 })
+    toast(accept ? 'Opening balance added to your savings' : 'Opening balance declined')
+    await loadDashboard()
+  } catch (e) { toast(e.message, 'error') } finally { busy.value = '' }
+}
 
 const standing = computed(() => {
   const s = data.value?.standing
   if (!s?.tracked) return null
   const f = s.frequency
   if (s.state === 'up_to_date') {
-    return { tone: 'ok', title: paidThroughLabel(s.paid_through, f), sub: `Next ${money(s.amount, currency.value)} due ${dueIn(s.next_due_date)}` }
+    return { tone: 'ok', title: paidThroughLabel(s.paid_through, f), sub: `Next ${money(s.next_amount ?? s.amount, currency.value)} due ${dueIn(s.next_due_date)}` }
   }
   if (s.state === 'due') {
     return { tone: 'due', title: `${cap(periodName(s.current_period_start, f))}’s ${money(s.due_now, currency.value)} is due`, sub: `Pay by ${shortDate(s.current_period_end)}`, pay: s.due_now }
@@ -59,9 +79,10 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
         <p class="text-sm text-ink-soft">Hello, {{ firstName(state.user?.full_name) }}</p>
         <CoopSwitcher />
       </div>
-      <RouterLink to="/announcements" class="relative mt-6 grid h-11 w-11 place-items-center rounded-full border border-line/[0.07] bg-card shadow-soft" aria-label="Announcements">
+      <RouterLink to="/notifications" class="relative mt-6 grid h-11 w-11 place-items-center rounded-full border border-line/[0.07] bg-card shadow-soft"
+        :aria-label="unread ? `Notifications, ${unread} unread` : 'Notifications'">
         <Icon name="bell" />
-        <span v-if="unreadNews" class="absolute right-2.5 top-2.5 h-2.5 w-2.5 rounded-full bg-gold ring-2 ring-card" />
+        <span v-if="unread" class="absolute -right-1 -top-1 grid h-5 min-w-5 place-items-center rounded-full bg-brand px-1 text-[11px] font-bold text-white ring-2 ring-paper">{{ unread > 9 ? '9+' : unread }}</span>
       </RouterLink>
     </header>
 
@@ -70,7 +91,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
       <div class="card p-7 text-center">
         <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-warn-soft text-warn"><Icon name="clock" :size="28" /></div>
         <h2 class="mt-4 font-display text-2xl font-semibold">{{ current.status === 'Pending' ? 'Almost there' : `Membership ${current.status.toLowerCase()}` }}</h2>
-        <p v-if="current.status === 'Pending'" class="mt-2 text-ink-soft">An admin of <b>{{ current.cooperative_name }}</b> needs to approve your request. Give them a nudge in the group chat.</p>
+        <p v-if="current.status === 'Pending'" class="mt-2 text-ink-soft">An admin of <b>{{ current.cooperative_name }}</b> needs to approve your request. They’ve been notified, and you’ll get a notification as soon as they do.</p>
         <p v-else class="mt-2 text-ink-soft">Contact your cooperative admin for help.</p>
       </div>
       <div class="mt-4"><InstallPrompt /></div>
@@ -81,54 +102,89 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
 
     <div v-else class="space-y-4 px-5 pt-5">
       <!-- Savings hero -->
-      <section class="relative overflow-hidden rounded-4xl bg-gradient-to-br from-forest-800 via-forest-800 to-forest-700 p-5 pb-4 text-white shadow-lift">
-        <svg class="pointer-events-none absolute -right-16 -top-20 h-64 w-64 text-coin-400/[0.13]" viewBox="0 0 100 100" aria-hidden="true">
+      <section class="relative overflow-hidden rounded-4xl bg-gradient-to-br from-navy-800 via-navy-800 to-navy-700 p-5 pb-4 text-white shadow-lift">
+        <svg class="pointer-events-none absolute -right-16 -top-20 h-64 w-64 text-glow-400/[0.13]" viewBox="0 0 100 100" aria-hidden="true">
           <circle cx="50" cy="50" r="34" fill="none" stroke="currentColor" stroke-width="9" /><circle cx="50" cy="50" r="18" fill="none" stroke="currentColor" stroke-width="3" />
         </svg>
-        <p class="relative text-sm text-forest-100/75">Your savings</p>
-        <p class="money relative mt-0.5 text-[44px] leading-[1.05]">{{ money(data.balances.total_contributed, currency) }}</p>
+        <p class="relative text-sm text-navy-100/75">Your savings</p>
+        <p class="money relative mt-0.5 text-[44px] leading-[1.05]">{{ money(data.balances.savings, currency) }}</p>
 
         <div v-if="standing" class="relative mt-3 flex items-center gap-2.5 rounded-2xl px-3 py-2.5"
-          :class="standing.tone === 'ok' ? 'bg-white/10' : standing.tone === 'due' ? 'bg-coin-400/20' : 'bg-[#f87a8c]/20'">
+          :class="standing.tone === 'behind' ? 'bg-[#f87171]/20' : 'bg-white/10'">
           <Icon :name="standing.tone === 'ok' ? 'checkCircle' : standing.tone === 'due' ? 'clock' : 'alert'" :size="18"
-            :class="standing.tone === 'ok' ? 'text-forest-300' : standing.tone === 'due' ? 'text-coin-300' : 'text-[#ffb3be]'" />
+            :class="standing.tone === 'behind' ? 'text-[#fecaca]' : 'text-glow-300'" />
           <div class="min-w-0 flex-1 leading-tight">
             <p class="truncate text-sm font-semibold">{{ standing.title }}</p>
-            <p class="truncate text-xs text-forest-100/70">{{ standing.sub }}</p>
+            <p class="truncate text-xs text-navy-100/70">{{ standing.sub }}</p>
           </div>
-          <RouterLink v-if="standing.pay" :to="{ path: '/save', query: { amount: standing.pay } }" class="btn-gold btn-sm shrink-0 px-3 py-1.5">Pay</RouterLink>
+          <RouterLink v-if="standing.pay" :to="{ path: '/save', query: { amount: standing.pay } }" class="btn-light btn-sm shrink-0 px-3 py-1.5">Pay</RouterLink>
         </div>
 
         <div class="relative mt-3 grid grid-cols-2 gap-2">
           <RouterLink to="/loans/new" class="rounded-2xl bg-white/[0.08] p-3 transition hover:bg-white/[0.12]">
-            <p class="text-xs text-forest-100/70">You can borrow</p>
+            <p class="text-xs text-navy-100/70">You can borrow</p>
             <p class="money mt-0.5 text-xl">{{ money(canBorrow, currency) }}</p>
           </RouterLink>
           <RouterLink to="/loans" class="rounded-2xl bg-white/[0.08] p-3 transition hover:bg-white/[0.12]">
-            <p class="text-xs text-forest-100/70">You owe</p>
+            <p class="text-xs text-navy-100/70">You owe</p>
             <p class="money mt-0.5 text-xl">{{ money(data.balances.loan_outstanding, currency) }}</p>
           </RouterLink>
         </div>
       </section>
 
       <!-- Actions -->
-      <section class="grid grid-cols-3 gap-3">
-        <RouterLink to="/save" class="card flex flex-col items-center gap-2 py-4 text-sm font-semibold transition hover:-translate-y-0.5">
-          <span class="grid h-11 w-11 place-items-center rounded-2xl bg-pos-soft text-pos"><Icon name="arrowDown" /></span>Save
-        </RouterLink>
-        <RouterLink to="/loans/new" class="card flex flex-col items-center gap-2 py-4 text-sm font-semibold transition hover:-translate-y-0.5">
-          <span class="grid h-11 w-11 place-items-center rounded-2xl bg-gold-soft text-gold-text"><Icon name="arrowUp" /></span>Borrow
-        </RouterLink>
-        <RouterLink :to="activeLoans[0] ? `/loans/${activeLoans[0].name}/repay` : '/loans'" class="card flex flex-col items-center gap-2 py-4 text-sm font-semibold transition hover:-translate-y-0.5">
-          <span class="grid h-11 w-11 place-items-center rounded-2xl bg-info-soft text-info"><Icon name="check" /></span>Repay
+      <section class="grid grid-cols-4 gap-2.5">
+        <RouterLink v-for="a in [
+          { to: '/save', label: 'Save', icon: 'arrowDown', tone: 'bg-pos-soft text-pos' },
+          { to: '/loans/new', label: 'Borrow', icon: 'loans', tone: 'bg-brand-soft text-brand-text' },
+          { to: activeLoans[0] ? `/loans/${activeLoans[0].name}/repay` : '/loans', label: 'Repay', icon: 'check', tone: 'bg-info-soft text-info' },
+          { to: '/withdraw', label: 'Withdraw', icon: 'arrowUp', tone: 'bg-accent-soft text-accent-text' },
+        ]" :key="a.label" :to="a.to" class="card flex flex-col items-center gap-2 py-3.5 text-[13px] font-semibold transition hover:-translate-y-0.5">
+          <span class="grid h-10 w-10 place-items-center rounded-2xl" :class="a.tone"><Icon :name="a.icon" :size="19" /></span>{{ a.label }}
         </RouterLink>
       </section>
+
+      <!-- Things waiting on the member -->
+      <section v-if="holdUntil" class="flex gap-3 rounded-3xl bg-warn-soft p-4 text-sm text-warn">
+        <Icon name="shield" :size="18" class="mt-0.5" />
+        <p>Your password was reset, so payout changes, loans and withdrawals are paused until <b>{{ date(holdUntil, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) }}</b>.</p>
+      </section>
+      <div v-for="ob in openingBalances" :key="ob.name" class="card border-brand-text/30 p-4">
+        <p class="text-xs font-semibold text-brand-text">Please confirm</p>
+        <p class="mt-1 text-[15px]">Your opening balance of <b class="money">{{ money(ob.amount, currency) }}</b>, what you’d saved before CoopVault{{ ob.contribution_date ? ` (as of ${date(ob.contribution_date)})` : '' }}.</p>
+        <p v-if="ob.notes" class="mt-1 text-sm text-ink-soft">“{{ ob.notes }}”</p>
+        <div class="mt-3 grid grid-cols-2 gap-2">
+          <button class="btn-secondary btn-sm" :disabled="busy === ob.name" @click="respondOpening(ob, false)">That’s not right</button>
+          <button class="btn-primary btn-sm" :disabled="busy === ob.name" @click="respondOpening(ob, true)">Yes, that’s right</button>
+        </div>
+      </div>
+      <RouterLink v-for="l in sentLoans" :key="l.name" :to="`/loans/${l.name}`" class="card flex items-center gap-3.5 border-brand-text/30 p-4">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand-text"><Icon name="bank" /></span>
+        <div class="min-w-0 flex-1">
+          <p class="text-[15px] font-semibold">{{ l.receipt_disputed ? 'We’re looking into your loan transfer' : 'Did your loan arrive?' }}</p>
+          <p class="truncate text-xs text-ink-soft">{{ money(l.principal, currency) }} sent to {{ l.payout_bank_name }} ••{{ String(l.payout_account_number || '').slice(-4) }}</p>
+        </div>
+        <span v-if="!l.receipt_disputed" class="btn-primary btn-sm">Confirm</span>
+      </RouterLink>
+      <RouterLink v-for="w in sentWithdrawals" :key="w.name" :to="`/withdrawals/${w.name}`" class="card flex items-center gap-3.5 border-brand-text/30 p-4">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand-text"><Icon name="bank" /></span>
+        <div class="min-w-0 flex-1">
+          <p class="text-[15px] font-semibold">{{ w.receipt_disputed ? 'We’re looking into your withdrawal' : 'Did your withdrawal arrive?' }}</p>
+          <p class="truncate text-xs text-ink-soft">{{ money(w.amount, currency) }} sent to {{ w.payout_bank_name }} ••{{ String(w.payout_account_number || '').slice(-4) }}</p>
+        </div>
+        <span v-if="!w.receipt_disputed" class="btn-primary btn-sm">Confirm</span>
+      </RouterLink>
+      <RouterLink v-for="w in pendingWithdrawals" :key="w.name" :to="`/withdrawals/${w.name}`" class="card flex items-center gap-3 p-4">
+        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-warn-soft text-warn"><Icon name="clock" :size="18" /></span>
+        <div class="flex-1"><p class="text-sm font-semibold">Withdrawal of {{ money(w.amount, currency) }}</p><p class="text-xs text-ink-soft">Waiting for the treasurer to send it</p></div>
+        <Icon name="chevron" :size="18" class="text-ink-faint" />
+      </RouterLink>
 
       <!-- Admin: collection progress + reviews -->
       <RouterLink v-if="isAdmin && period" to="/admin" class="card block p-4">
         <div class="flex items-center justify-between gap-3">
           <p class="text-sm font-semibold">{{ cap(periodName(period.start, period.frequency)) }} collection</p>
-          <span v-if="pendingTotal" class="chip bg-gold-soft text-gold-text">{{ pendingTotal }} to review</span>
+          <span v-if="pendingTotal" class="chip bg-accent-soft text-accent-text">{{ pendingTotal }} to review</span>
           <Icon v-else name="chevron" :size="18" class="text-ink-faint" />
         </div>
         <div class="mt-3 h-2 overflow-hidden rounded-full bg-line/[0.07]">
@@ -140,7 +196,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
           · {{ money(period.collected, currency) }} received
         </p>
       </RouterLink>
-      <RouterLink v-else-if="isAdmin && pendingTotal" to="/admin" class="flex items-center gap-3 rounded-3xl bg-gold-soft p-4 text-gold-text">
+      <RouterLink v-else-if="isAdmin && pendingTotal" to="/admin" class="flex items-center gap-3 rounded-3xl bg-accent-soft p-4 text-accent-text">
         <Icon name="alert" />
         <span class="flex-1 text-sm font-semibold">{{ pendingTotal }} item{{ pendingTotal > 1 ? 's' : '' }} waiting for your review</span>
         <Icon name="chevron" />
@@ -208,9 +264,9 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
       <!-- Announcement -->
       <RouterLink v-if="latestNews" to="/announcements" class="card block p-4">
         <div class="flex items-center gap-2 text-xs font-semibold text-ink-soft">
-          <Icon :name="latestNews.pinned ? 'pin' : 'bell'" :size="14" :class="latestNews.pinned ? 'text-gold' : ''" />
+          <Icon :name="latestNews.pinned ? 'pin' : 'bell'" :size="14" :class="latestNews.pinned ? 'text-accent' : ''" />
           Announcement · {{ relative(latestNews.creation) }}
-          <span v-if="unreadNews" class="chip ml-auto bg-gold-soft px-2 py-0.5 text-[10px] text-gold-text">New</span>
+          <span v-if="unreadNews" class="chip ml-auto bg-accent-soft px-2 py-0.5 text-[10px] text-accent-text">New</span>
         </div>
         <p class="mt-2 font-semibold">{{ latestNews.title }}</p>
         <p class="mt-1 line-clamp-2 whitespace-pre-line text-sm text-ink-soft">{{ latestNews.message }}</p>

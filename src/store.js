@@ -27,7 +27,10 @@ export const current = computed(() => {
   return list.find((m) => m.cooperative === state.currentId) || list.find((m) => m.status === 'Active') || list[0] || null
 })
 export const currency = computed(() => current.value?.currency || 'NGN')
+// Staff = Admin or Treasurer (money and members); Admin alone runs settings, roles and resets
 export const isAdmin = computed(() => current.value?.status === 'Active' && ['Admin', 'Treasurer'].includes(current.value?.role))
+export const isOwner = computed(() => current.value?.status === 'Active' && current.value?.role === 'Admin')
+export const isDemo = computed(() => !!state.paystack?.test_mode)
 export const dashboard = computed(() => (current.value ? state.dashboards[current.value.cooperative] : null))
 
 export function selectCooperative(id) {
@@ -38,6 +41,8 @@ export function selectCooperative(id) {
 export async function loadSession() {
   if (!state.token) {
     state.loaded = true
+    // Still worth knowing whether this is the demo (Paystack test mode) for the banner
+    api.get('payments.config').then((c) => { state.paystack = c }).catch(() => {})
     return
   }
   try {
@@ -73,6 +78,12 @@ export function startSession(payload) {
   api.setToken(payload.token)
   state.token = payload.token
   state.user = payload.user
+}
+
+/** End the session on the server too; the local token is cleared either way. */
+export async function signOut() {
+  try { await api.post('auth.logout') } catch {}
+  logout()
 }
 
 export function logout() {

@@ -1,5 +1,5 @@
-// Thin client for the CoopVault Frappe API. Auth uses Frappe API-key tokens so the
-// PWA (on Firebase) never depends on cross-site cookies.
+// Thin client for the CoopVault Frappe API. Auth uses short-lived server-side session tokens
+// (Authorization: Session …) so the PWA on Firebase never depends on cross-site cookies.
 export const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const TOKEN_KEY = 'coopvault.token'
 
@@ -26,6 +26,8 @@ function stripHtml(s) {
 }
 
 function errorMessage(body, status) {
+  // Frappe's own rate-limit wording ("try after sometime") reads poorly; ours are already friendly
+  if (status === 429 && /hit the rate limit/.test(body?._server_messages || '')) return 'Too many attempts. Please wait a few minutes and try again.'
   try {
     if (body?._server_messages) {
       const msgs = JSON.parse(body._server_messages).map((m) => stripHtml(JSON.parse(m).message))
@@ -42,7 +44,7 @@ function errorMessage(body, status) {
 async function request(path, { method = 'GET', params, body, raw = false } = {}) {
   const headers = { Accept: 'application/json' }
   const token = getToken()
-  if (token) headers.Authorization = `token ${token}`
+  if (token) headers.Authorization = `Session ${token}`
   let url = `${API_URL}${path}`
   if (params) {
     const qs = new URLSearchParams(Object.entries(params).filter(([, v]) => v !== undefined && v !== null && v !== ''))
@@ -73,17 +75,3 @@ export const get = (method, params) => request(`/api/method/coopvault.api.${meth
 /** Write endpoint: api.post('finance.apply_loan', {...}) */
 export const post = (method, body = {}) => request(`/api/method/coopvault.api.${method}`, { method: 'POST', body })
 
-export async function downloadProof(doctype, name) {
-  const res = await request('/api/method/coopvault.api.finance.download_proof', { params: { doctype, name }, raw: true })
-  const blob = await res.blob()
-  return { url: URL.createObjectURL(blob), type: blob.type }
-}
-
-export function fileToDataUrl(file) {
-  return new Promise((resolve, reject) => {
-    const reader = new FileReader()
-    reader.onload = () => resolve(reader.result)
-    reader.onerror = reject
-    reader.readAsDataURL(file)
-  })
-}

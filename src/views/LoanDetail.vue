@@ -1,13 +1,14 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import * as api from '../api'
-import { currency, isAdmin, toast, copyText } from '../store'
+import { currency, isAdmin, toast, copyText, loadDashboard } from '../store'
 import { money, date, dueIn } from '../format'
 import PageHeader from '../components/PageHeader.vue'
 import StatusPill from '../components/StatusPill.vue'
 import Loader from '../components/Loader.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import Sheet from '../components/Sheet.vue'
+import TransferConfirm from '../components/TransferConfirm.vue'
 import Icon from '../components/Icon.vue'
 
 const props = defineProps({ name: String })
@@ -17,6 +18,21 @@ const busy = ref(false)
 const confirmCancel = ref(false)
 const s = computed(() => loan.value?.schedule)
 const today = new Date().toISOString().slice(0, 10)
+const fixing = ref(false)
+const newRef = ref('')
+
+async function updateTransfer() {
+  busy.value = true
+  try {
+    loan.value = await api.post('finance.update_loan_transfer', { name: props.name, transfer_reference: newRef.value })
+    fixing.value = false
+    toast('Transfer updated. The borrower has been asked to confirm.')
+  } catch (e) { toast(e.message, 'error') } finally { busy.value = false }
+}
+function onConfirmed(updated) {
+  loan.value = updated
+  loadDashboard().catch(() => {})
+}
 
 async function load() {
   try { loan.value = await api.get('finance.get_loan', { name: props.name }) } catch (e) { error.value = e.message }
@@ -42,7 +58,7 @@ onMounted(load)
       <template v-if="loan">
         <section class="card p-5">
           <div class="flex items-center justify-between">
-            <p class="text-sm text-ink-soft">{{ loan.status === 'Active' ? 'Left to pay' : loan.status === 'Repaid' ? 'Fully repaid' : 'Amount requested' }}</p>
+            <p class="text-sm text-ink-soft">{{ loan.status === 'Active' ? 'Left to pay' : loan.status === 'Repaid' ? 'Fully repaid' : loan.status === 'Sent' ? 'Sent to you' : 'Amount requested' }}</p>
             <StatusPill :status="s?.is_overdue ? 'Overdue' : loan.status" />
           </div>
           <p class="money mt-1 text-[40px] leading-tight">{{ money(loan.status === 'Active' ? loan.balance : loan.status === 'Repaid' ? loan.total_payable : loan.principal, currency) }}</p>
@@ -59,8 +75,16 @@ onMounted(load)
           <RouterLink v-if="loan.status === 'Active'" :to="`/loans/${loan.name}/repay`" class="btn-primary mt-4 w-full">Make a repayment</RouterLink>
           <template v-if="loan.status === 'Pending'">
             <p class="mt-3 flex gap-2 text-sm text-ink-soft"><Icon name="clock" :size="18" /> Waiting for the treasurer to approve and send the money.</p>
-            <button v-if="!isAdmin" class="btn-ghost mt-3 w-full text-neg" @click="confirmCancel = true">Cancel request</button>
+            <button v-if="loan.is_mine" class="btn-ghost mt-3 w-full text-neg" @click="confirmCancel = true">Cancel request</button>
           </template>
+        </section>
+
+        <TransferConfirm v-if="loan.status === 'Sent' && loan.is_mine" kind="loan" :doc="loan" @done="onConfirmed" />
+        <section v-if="loan.status === 'Sent' && !loan.is_mine && isAdmin" class="card p-5 text-sm">
+          <p class="font-semibold">{{ loan.receipt_disputed ? `${loan.member_name} says it hasn’t arrived` : `Waiting for ${loan.member_name} to confirm` }}</p>
+          <p class="mt-1 text-ink-soft">Sent to {{ loan.payout_bank_name }} {{ loan.payout_account_number }} · reference {{ loan.transfer_reference }}</p>
+          <p v-if="loan.dispute_note" class="mt-2 rounded-2xl bg-warn-soft p-3 text-warn">“{{ loan.dispute_note }}”</p>
+          <button v-if="loan.receipt_disputed" class="btn-secondary btn-sm mt-3" @click="fixing = true; newRef = ''">Record a new transfer</button>
         </section>
 
         <!-- Instalments -->
@@ -116,6 +140,12 @@ onMounted(load)
       </template>
     </div>
 
+    <Sheet :open="fixing" title="Record the new transfer" subtitle="After you’ve checked or resent the money, enter the reference from your bank app." @close="fixing = false">
+      <form class="space-y-4" @submit.prevent="updateTransfer">
+        <input v-model="newRef" class="input num" placeholder="Transfer reference" required />
+        <button class="btn-primary w-full" :disabled="busy || !newRef.trim()">Save and ask them to confirm</button>
+      </form>
+    </Sheet>
     <Sheet :open="confirmCancel" title="Cancel this loan request?" subtitle="You can request again any time." @close="confirmCancel = false">
       <div class="grid grid-cols-2 gap-3">
         <button class="btn-secondary" @click="confirmCancel = false">Keep it</button>

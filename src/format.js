@@ -105,3 +105,12 @@ export function whatsappLink(phone, text) {
 }
 
 export const appUrl = (path = '') => `${location.origin}${path}`
+
+// Paystack's local fee, as set in CoopVault Settings, in words.
+export function feeRule(fees, currency) {
+  if (!fees) return ''
+  const flat = fees.flat ? ` + ${money(fees.flat, currency)}` : ''
+  const waived = fees.flat && fees.flat_waived_below ? ` (no ${money(fees.flat, currency)} under ${money(fees.flat_waived_below, currency)})` : ''
+  const cap = fees.cap ? `, never more than ${money(fees.cap, currency)}` : ''
+  return `Paystack charges ${fees.percent}%${flat}${waived}${cap}`
+}

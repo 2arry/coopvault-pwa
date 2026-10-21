@@ -7,7 +7,12 @@ import { state } from '../store'
 import Sheet from './Sheet.vue'
 import Icon from './Icon.vue'
 
-const props = defineProps({ initial: { type: Object, default: () => ({}) }, busy: Boolean, submitLabel: { type: String, default: 'Save account' } })
+const props = defineProps({
+  initial: { type: Object, default: () => ({}) },
+  busy: Boolean,
+  submitLabel: { type: String, default: 'Save account' },
+  requirePassword: Boolean,
+})
 const emit = defineEmits(['submit'])
 
 const verified = computed(() => state.paystack.enabled)
@@ -20,6 +25,7 @@ const form = ref({
   account_number: props.initial.account_number || '',
   account_name: props.initial.account_name || '',
 })
+const password = ref('')
 const resolving = ref(false)
 const lookupError = ref('')
 const filtered = computed(() => {
@@ -32,9 +38,9 @@ onMounted(async () => {
 })
 
 function useTestAccount() {
-  form.value.bank_code = '057'
-  form.value.bank_name = banks.value.find((b) => b.code === '057')?.name || 'Zenith Bank'
-  form.value.account_number = '0000000000'
+  form.value.bank_code = '001'
+  form.value.bank_name = 'Paystack Test Bank'
+  if (!/^\d{10}$/.test(form.value.account_number)) form.value.account_number = '0000000000'
 }
 
 function choose(b) {
@@ -69,14 +75,15 @@ async function resolve() {
   }
 }
 
-const ready = computed(() => form.value.account_number && (verified.value ? form.value.account_name && form.value.bank_code : form.value.bank_name && form.value.account_name))
+const ready = computed(() => form.value.account_number && (!props.requirePassword || password.value)
+  && (verified.value ? form.value.account_name && form.value.bank_code : form.value.bank_name && form.value.account_name))
 </script>
 
 <template>
-  <form class="space-y-4" @submit.prevent="ready && emit('submit', { ...form })">
+  <form class="space-y-4" @submit.prevent="ready && emit('submit', { ...form, password })">
     <div v-if="verified && state.paystack.test_mode" class="flex items-start gap-3 rounded-2xl bg-info-soft p-3.5 text-sm text-info">
       <Icon name="info" :size="18" class="mt-0.5" />
-      <p class="flex-1">Test mode: Paystack only verifies <b>Zenith Bank · 0000000000</b>.</p>
+      <p class="flex-1">Test mode: choose <b>Paystack Test Bank</b>. Any 10-digit account number works there.</p>
       <button type="button" class="chip shrink-0 bg-card text-info" @click="useTestAccount">Use it</button>
     </div>
     <div>
@@ -106,6 +113,11 @@ const ready = computed(() => form.value.account_number && (verified.value ? form
       <input id="acctname" v-model="form.account_name" class="input" required />
     </div>
     <slot />
+    <div v-if="requirePassword">
+      <label class="label" for="confirm-pw">Your password</label>
+      <input id="confirm-pw" v-model="password" type="password" class="input" autocomplete="current-password" required />
+      <p class="hint">We ask because this decides where money is sent.</p>
+    </div>
     <button class="btn-primary w-full" :disabled="busy || !ready">{{ busy ? 'Saving…' : submitLabel }}</button>
   </form>
 

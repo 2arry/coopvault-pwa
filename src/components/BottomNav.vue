@@ -24,7 +24,7 @@ const tabs = computed(() => [
         :aria-current="route.meta.tab === t.tab ? 'page' : undefined">
         <span class="relative rounded-full px-4 py-1 transition" :class="route.meta.tab === t.tab ? 'bg-brand-soft' : ''">
           <Icon :name="t.icon" :size="21" :stroke="route.meta.tab === t.tab ? 2.2 : 1.8" />
-          <span v-if="t.badge" class="absolute -right-0.5 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-gold px-1 text-[10px] font-bold text-forest-950">{{ t.badge > 9 ? '9+' : t.badge }}</span>
+          <span v-if="t.badge" class="absolute -right-0.5 -top-1 grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-white">{{ t.badge > 9 ? '9+' : t.badge }}</span>
         </span>
         {{ t.label }}
       </RouterLink>

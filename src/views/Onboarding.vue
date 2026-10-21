@@ -127,7 +127,7 @@ async function create() {
           <div v-if="form.contribution_frequency !== 'Flexible'">
             <label class="label text-xs" for="start">Counting from</label>
             <input id="start" v-model="form.start_date" type="date" class="input" />
-            <p class="hint">Members owe one contribution per {{ form.contribution_frequency === 'Weekly' ? 'week' : form.contribution_frequency === 'Quarterly' ? 'quarter' : 'month' }} from this date, or from when they join. Leave empty to start from today.</p>
+            <p class="hint">One contribution per {{ form.contribution_frequency === 'Weekly' ? 'week' : form.contribution_frequency === 'Quarterly' ? 'quarter' : 'month' }}. Each member starts with the first full {{ form.contribution_frequency === 'Weekly' ? 'week' : form.contribution_frequency === 'Quarterly' ? 'quarter' : 'month' }} after they join (or after this date), so nobody owes for time before they were in. Leave empty to start from today.</p>
           </div>
         </div>
         <div class="card-flat space-y-4 p-4">
