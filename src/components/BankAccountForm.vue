@@ -31,6 +31,12 @@ onMounted(async () => {
   if (verified.value) banks.value = await api.get('payments.banks').catch(() => [])
 })
 
+function useTestAccount() {
+  form.value.bank_code = '057'
+  form.value.bank_name = banks.value.find((b) => b.code === '057')?.name || 'Zenith Bank'
+  form.value.account_number = '0000000000'
+}
+
 function choose(b) {
   form.value.bank_code = b.code
   form.value.bank_name = b.name
@@ -68,6 +74,11 @@ const ready = computed(() => form.value.account_number && (verified.value ? form
 
 <template>
   <form class="space-y-4" @submit.prevent="ready && emit('submit', { ...form })">
+    <div v-if="verified && state.paystack.test_mode" class="flex items-start gap-3 rounded-2xl bg-info-soft p-3.5 text-sm text-info">
+      <Icon name="info" :size="18" class="mt-0.5" />
+      <p class="flex-1">Test mode: Paystack only verifies <b>Zenith Bank · 0000000000</b>.</p>
+      <button type="button" class="chip shrink-0 bg-card text-info" @click="useTestAccount">Use it</button>
+    </div>
     <div>
       <span class="label">Bank</span>
       <button v-if="verified" type="button" class="input flex items-center justify-between text-left" @click="picking = true">

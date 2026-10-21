@@ -4,7 +4,7 @@
 import { ref, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import * as api from '../api'
-import { current, currency, isAdmin, dashboard, copyText, toast } from '../store'
+import { state, current, currency, isAdmin, dashboard, copyText, toast } from '../store'
 import { money, today, periodWord } from '../format'
 import { payWithPaystack, receiptPath } from '../payments'
 import AmountField from './AmountField.vue'
@@ -210,5 +210,9 @@ async function submit() {
       <template v-else>{{ isAdmin ? 'Record payment' : 'Send for confirmation' }}</template>
     </button>
     <p v-if="method === 'online'" class="-mt-3 text-center text-xs text-ink-faint">Secured by Paystack. CoopVault never sees your card details.</p>
+    <p v-if="method === 'online' && state.paystack.test_mode" class="flex gap-2 rounded-2xl bg-info-soft p-3 text-xs text-info">
+      <Icon name="info" :size="16" class="shrink-0" />
+      <span>Test mode, so no real money moves. Pay with Paystack’s test card <b class="num">4084 0840 8408 4081</b>, any future expiry date, CVV <b>408</b>.</span>
+    </p>
   </form>
 </template>
