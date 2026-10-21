@@ -19,6 +19,10 @@ const tone = computed(() => ({
   Rejected: 'bg-neg-soft text-neg',
   Failed: 'bg-neg-soft text-neg',
   Suspended: 'bg-neg-soft text-neg',
+  Posted: 'bg-pos-soft text-pos',
+  Draft: 'bg-warn-soft text-warn',
+  Cancelled: 'bg-line/[0.07] text-ink-soft',
+  Unmatched: 'bg-warn-soft text-warn',
 }[props.status] || 'bg-line/[0.07] text-ink-soft'))
 const text = computed(() => props.label || ({ Pending: 'Awaiting approval', Initiated: 'Processing', Sent: 'On its way' }[props.status] || props.status))
 </script>

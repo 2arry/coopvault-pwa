@@ -16,7 +16,28 @@ const sending = ref(null) // { kind, row }
 const fixing = ref(null) // a disputed loan or withdrawal
 const note = ref('')
 const reference = ref('')
-const empty = computed(() => data.value && !['members', 'loans', 'withdrawals', 'disputes'].some((k) => data.value[k].length))
+const empty = computed(() => data.value && !['members', 'loans', 'withdrawals', 'disputes', 'unmatched'].some((k) => data.value[k]?.length))
+const matching = ref(null) // an unmatched transfer
+const matchTo = ref('')
+const members = ref([])
+async function askMatch(tx) {
+  matchTo.value = ''
+  matching.value = tx
+  if (!members.value.length) {
+    members.value = (await api.get('coop.list_members', { cooperative: current.value.cooperative }).catch(() => []))
+      .filter((m) => m.status !== 'Pending' && m.name !== current.value.name)
+  }
+}
+async function match() {
+  busy.value = matching.value.name
+  try {
+    await api.post('finance.allocate_unmatched', { reference: matching.value.name, member: matchTo.value })
+    toast('Added to their savings. They’ve been told.')
+    matching.value = null
+    await load()
+    loadDashboard().catch(() => {})
+  } catch (e) { toast(e.message, 'error') } finally { busy.value = '' }
+}
 
 async function load() {
   error.value = ''
@@ -93,6 +114,20 @@ onActivated(() => data.value && load())
     </div>
 
     <template v-if="data">
+      <section v-if="data.unmatched?.length">
+        <h2 class="px-1 text-sm font-semibold text-warn">Transfers to match</h2>
+        <p class="mt-1 px-1 text-xs text-ink-soft">Money that reached the group’s account without a member’s account number. Find out who sent it.</p>
+        <div class="mt-3 space-y-2">
+          <div v-for="u in data.unmatched" :key="u.name" class="card flex items-center gap-3 p-4">
+            <div class="min-w-0 flex-1">
+              <p class="money text-xl">{{ money(u.amount, currency) }}</p>
+              <p class="truncate text-xs text-ink-soft">{{ relative(u.creation) }} · {{ u.message }}</p>
+            </div>
+            <button class="btn-primary btn-sm" :disabled="busy === u.name" @click="askMatch(u)">Match</button>
+          </div>
+        </div>
+      </section>
+
       <section v-if="data.disputes.length">
         <h2 class="px-1 text-sm font-semibold text-warn">Says it hasn’t arrived</h2>
         <div class="mt-3 space-y-2">
@@ -229,6 +264,15 @@ onActivated(() => data.value && load())
       <form class="space-y-4" @submit.prevent="saveFix">
         <input v-model="reference" class="input num" placeholder="Transfer reference" required autocomplete="off" />
         <button class="btn-primary w-full" :disabled="!!busy || !reference.trim()">Save and ask them to confirm</button>
+      </form>
+    </Sheet>
+    <Sheet :open="!!matching" :title="matching ? `Who sent ${money(matching.amount, currency)}?` : ''" subtitle="It’s added to their savings and they’re told. You can’t match a transfer to yourself." @close="matching = null">
+      <form class="space-y-4" @submit.prevent="match">
+        <select v-model="matchTo" class="input" required>
+          <option value="" disabled>Choose the member</option>
+          <option v-for="m in members" :key="m.name" :value="m.name">{{ m.full_name }}{{ m.phone ? ` · ${m.phone}` : '' }}</option>
+        </select>
+        <button class="btn-primary w-full" :disabled="!!busy || !matchTo">Add to their savings</button>
       </form>
     </Sheet>
     <Sheet :open="!!rejecting" title="Decline this request?" subtitle="They’ll see your reason." @close="rejecting = null">

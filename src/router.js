@@ -38,6 +38,15 @@ const routes = [
   { path: '/pay/callback', component: view('PayCallback') },
   { path: '/admin', component: view('admin/Admin'), meta: { tab: 'admin', admin: true } },
   { path: '/admin/members/:name', component: view('admin/MemberDetail'), props: true, meta: { tab: 'admin', admin: true } },
+  { path: '/admin/books/report/:kind', component: view('admin/books/Report'), props: true, meta: { admin: true } },
+  { path: '/admin/books/journals', component: view('admin/books/Journals'), meta: { admin: true } },
+  { path: '/admin/books/journal/new', component: view('admin/books/JournalNew'), meta: { admin: true } },
+  { path: '/admin/books/journal/:name', component: view('admin/books/Journal'), props: true, meta: { admin: true } },
+  { path: '/admin/books/accounts', component: view('admin/books/Accounts'), meta: { admin: true } },
+  { path: '/admin/books/ledger/:account', component: view('admin/books/Ledger'), props: true, meta: { admin: true } },
+  { path: '/admin/books/share-out', component: view('admin/books/ShareOut'), meta: { admin: true } },
+  { path: '/admin/books/share-out/:name', component: view('admin/books/ShareOut'), props: true, meta: { admin: true } },
+  { path: '/share-out/:name', component: view('ShareOutMine'), props: true },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 

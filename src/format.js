@@ -2,7 +2,9 @@ const formatters = {}
 
 /** ₦20,000 (no .00 on whole amounts), ₦269.04 when there are kobo, ₦1.2M when compact. */
 export function money(amount, currency = 'NGN', { compact = false } = {}) {
-  const n = Number(amount) || 0
+  const raw = Number(amount) || 0
+  // A stray kobo shouldn't read as "-₦0"
+  const n = Math.abs(raw) < (compact ? 0.5 : 0.005) ? 0 : raw
   const whole = Math.abs(n - Math.round(n)) < 0.005
   const key = `${currency}|${compact}|${whole}`
   if (!formatters[key]) {
@@ -113,4 +115,18 @@ export function feeRule(fees, currency) {
   const waived = fees.flat && fees.flat_waived_below ? ` (no ${money(fees.flat, currency)} under ${money(fees.flat_waived_below, currency)})` : ''
   const cap = fees.cap ? `, never more than ${money(fees.cap, currency)}` : ''
   return `Paystack charges ${fees.percent}%${flat}${waived}${cap}`
+}
+
+/** Accounting figure for report columns: 12,345.00, and (12,345.00) when negative. */
+export function figure(amount) {
+  const n = Number(amount) || 0
+  if (Math.abs(n) < 0.005) return '–'
+  const text = Math.abs(n).toLocaleString('en-NG', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
+  return n < 0 ? `(${text})` : text
+}
+
+/** yyyy-mm-dd for date inputs. */
+export const isoDate = (d) => {
+  const x = d instanceof Date ? d : new Date(String(d).slice(0, 10) + 'T00:00:00')
+  return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
 }

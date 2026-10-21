@@ -137,3 +137,12 @@
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
 }
+
+/* "Save as PDF" goes through the browser's print dialog: keep only the content */
+@media print {
+  .no-print, nav, .demo-banner, .toast { display: none !important; }
+  html, body { background: #fff !important; color: #0c1629 !important; }
+  .card, .report { box-shadow: none !important; border: 1px solid #d8dee9 !important; break-inside: avoid; }
+  a { color: inherit !important; text-decoration: none !important; }
+  @page { margin: 14mm; }
+}

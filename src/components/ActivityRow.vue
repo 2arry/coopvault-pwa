@@ -10,11 +10,13 @@ const meta = computed(() => ({
   Loan: { icon: 'arrowUp', tone: 'bg-accent-soft text-accent-text', label: 'Borrowed', sign: '' },
   Repayment: { icon: 'check', tone: 'bg-info-soft text-info', label: 'Repaid loan', sign: '' },
   Withdrawal: { icon: 'arrowUp', tone: 'bg-brand-soft text-brand-text', label: 'Took out savings', sign: '−' },
+  'Share-out': { icon: 'sparkle', tone: 'bg-pos-soft text-pos', label: 'Share of surplus', sign: '+' },
 }[props.entry.type]))
 const link = computed(() => {
   const e = props.entry
   if (e.type === 'Loan') return `/loans/${e.name}`
   if (e.type === 'Withdrawal') return `/withdrawals/${e.name}`
+  if (e.type === 'Share-out') return `/share-out/${e.name}`
   return `/receipt/${encodeURIComponent(e.doctype)}/${encodeURIComponent(e.name)}`
 })
 const settled = computed(() => ['Confirmed', 'Active', 'Repaid', 'Completed'].includes(props.entry.status))
@@ -31,8 +33,8 @@ const methodLabel = (m) => ({ Paystack: 'Online', 'Bank Transfer': 'Transfer', '
       <p class="truncate text-xs text-ink-soft">{{ date(entry.date, { day: 'numeric', month: 'short' }) }}<span v-if="entry.method"> · {{ methodLabel(entry.method) }}</span></p>
     </div>
     <div class="text-right">
-      <p class="num text-[15px] font-semibold" :class="[['Rejected', 'Cancelled', 'Reversed'].includes(entry.status) ? 'text-ink-faint line-through' : '', entry.type === 'Contribution' && settled ? 'text-pos' : '']">
-        {{ entry.type === 'Contribution' && settled ? meta.sign : '' }}{{ money(entry.amount, currency) }}
+      <p class="num text-[15px] font-semibold" :class="[['Rejected', 'Cancelled', 'Reversed'].includes(entry.status) ? 'text-ink-faint line-through' : '', meta.sign === '+' && settled ? 'text-pos' : '']">
+        {{ meta.sign === '+' && settled ? meta.sign : '' }}{{ money(entry.amount, currency) }}
       </p>
       <StatusPill v-if="!settled" :status="entry.status" />
     </div>
