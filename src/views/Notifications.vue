@@ -79,7 +79,7 @@ onMounted(async () => {
         <span class="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-card text-brand-text"><Icon name="bell" /></span>
         <div class="flex-1 text-sm">
           <p class="font-semibold">Get these on your phone</p>
-          <p v-if="needsInstallForPush" class="text-ink-soft">On iPhone, add CoopVault to your home screen first (Share → Add to Home Screen), then turn notifications on from there.</p>
+          <p v-if="needsInstallForPush" class="text-ink-soft">On iPhone, add Cooperative360 to your home screen first (Share → Add to Home Screen), then turn notifications on from there.</p>
           <template v-else>
             <p class="text-ink-soft">We’ll tell you when money arrives, a loan is sent or something needs you.</p>
             <button class="btn-primary btn-sm mt-3" :disabled="enabling" @click="turnOnPush">Turn on notifications</button>

@@ -21,7 +21,7 @@ async function install() {
   <div v-if="show" class="card flex items-start gap-3.5 p-4">
     <img src="/pwa-64x64.png" alt="" class="h-11 w-11 rounded-2xl shadow-sm" />
     <div class="flex-1 text-sm">
-      <p class="font-semibold">Put CoopVault on your home screen</p>
+      <p class="font-semibold">Put Cooperative360 on your home screen</p>
       <p v-if="isIOS && !installEvent" class="mt-0.5 text-ink-soft">In Safari, tap <b>Share</b> <Icon name="share" :size="14" class="-mt-1 inline" /> then <b>Add to Home Screen</b>.</p>
       <p v-else class="mt-0.5 text-ink-soft">Opens like an app. No app store, no big download.</p>
       <button v-if="installEvent" class="btn-primary btn-sm mt-3" @click="install"><Icon name="download" :size="16" /> Install</button>

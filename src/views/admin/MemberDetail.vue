@@ -27,6 +27,9 @@ const s = computed(() => st.value?.standing)
 const isSelf = computed(() => current.value?.name === props.name)
 const owing = computed(() => ['due', 'behind'].includes(s.value?.state))
 const reminder = computed(() => (st.value && owing.value ? memberReminder({ ...member.value, standing: s.value }, current.value.cooperative_name, currency.value) : ''))
+const recently = (value, hours = 72) => value && Date.now() - new Date(String(value).replace(' ', 'T')).getTime() < hours * 3600 * 1000
+const phoneRecent = computed(() => recently(member.value?.phone_changed_on, 24 * 7))
+const resetPhoneRecent = computed(() => recently(reset.value?.phone_changed_on, 24 * 7))
 const payoutRecent = computed(() => {
   const c = member.value?.payout_changed_on
   return c && Date.now() - new Date(String(c).replace(' ', 'T')).getTime() < 72 * 3600 * 1000
@@ -73,7 +76,7 @@ async function createReset() {
   try { reset.value = await api.post('coop.create_reset_code', { cooperative: current.value.cooperative, member: props.name }) } catch (e) { toast(e.message, 'error') } finally { busy.value = false }
 }
 const resetMessage = computed(() => reset.value
-  ? `Your CoopVault password reset code is ${reset.value.code}. It works once and expires in ${reset.value.minutes} minutes. Open ${appUrl('/forgot')} and enter it with your phone number.`
+  ? `Your Cooperative360 password reset code is ${reset.value.code}. It works once and expires in ${reset.value.minutes} minutes. Open ${appUrl('/forgot')} and enter it with your phone number.`
   : '')
 
 onMounted(load)
@@ -112,7 +115,10 @@ onMounted(load)
         </section>
 
         <section class="card divide-soft text-sm">
-          <div class="flex items-center justify-between p-4"><span class="text-ink-soft">Phone</span><span>{{ member.phone || '—' }}</span></div>
+          <div class="p-4">
+            <div class="flex items-center justify-between"><span class="text-ink-soft">Phone</span><span>{{ member.phone || '—' }}</span></div>
+            <p v-if="phoneRecent" class="mt-2 flex gap-2 rounded-2xl bg-warn-soft p-2.5 text-xs text-warn"><Icon name="alert" :size="14" class="mt-0.5 shrink-0" /> Changed {{ relative(member.phone_changed_on) }}. Make sure it was really them before sending a reset code.</p>
+          </div>
           <div class="flex items-center justify-between p-4">
             <span class="text-ink-soft">Role</span>
             <select v-if="isOwner && !isSelf" :value="member.role" class="rounded-xl border border-line/12 bg-card px-3 py-1.5" @change="ask({ role: $event.target.value }); $event.target.value = member.role">
@@ -165,7 +171,7 @@ onMounted(load)
       </div>
     </Sheet>
 
-    <Sheet :open="opening" :title="`Opening balance for ${member?.full_name}`" subtitle="What they’d already saved before CoopVault. It only counts once they confirm it in their app." @close="opening = false">
+    <Sheet :open="opening" :title="`Opening balance for ${member?.full_name}`" subtitle="What they’d already saved before Cooperative360. It only counts once they confirm it in their app." @close="opening = false">
       <form class="space-y-4" @submit.prevent="proposeOpening">
         <AmountField v-model="ob.amount" :currency="currency" label="Amount saved so far" id="ob-amount" />
         <div><label class="label" for="ob-date">As of</label><input id="ob-date" v-model="ob.as_of" type="date" :max="today()" class="input" /></div>
@@ -176,6 +182,7 @@ onMounted(load)
 
     <Sheet :open="!!reset" title="Reset code" :subtitle="`Give this to ${reset?.full_name}. It works once and expires in ${reset?.minutes} minutes.`" @close="reset = null">
       <template v-if="reset">
+        <p v-if="resetPhoneRecent" class="mb-4 flex gap-2 rounded-2xl bg-warn-soft p-3 text-sm text-warn"><Icon name="alert" :size="16" class="mt-0.5 shrink-0" /> Their phone number changed {{ relative(reset.phone_changed_on) }}. Call or meet them to confirm it’s really them before you share this.</p>
         <p class="money rounded-3xl bg-sunk py-5 text-center text-4xl tracking-[0.2em]">{{ reset.code }}</p>
         <div class="mt-4 grid grid-cols-2 gap-2">
           <button class="btn-secondary" @click="copyText(reset.code, 'Code copied')"><Icon name="copy" :size="16" /> Copy</button>

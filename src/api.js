@@ -1,4 +1,4 @@
-// Thin client for the CoopVault Frappe API. Auth uses short-lived server-side session tokens
+// Thin client for the Cooperative360 Frappe API. Auth uses short-lived server-side session tokens
 // (Authorization: Session …) so the PWA on Firebase never depends on cross-site cookies.
 export const API_URL = (import.meta.env.VITE_API_URL || '').replace(/\/$/, '')
 const TOKEN_KEY = 'coopvault.token'

@@ -18,12 +18,12 @@ const features = [
   { icon: 'shield', title: 'Records you can trust', body: 'Every payment is confirmed by Paystack, not a screenshot. Nobody can approve money for themselves, and records can’t be quietly edited.' },
 ]
 const faqs = [
-  { q: 'Who holds the money?', a: 'Your cooperative does. When the treasurer connects the group’s bank account, online payments settle straight into it through Paystack. CoopVault keeps the record; it never holds your savings.' },
+  { q: 'Who holds the money?', a: 'Your cooperative does. When the treasurer connects the group’s bank account, online payments settle straight into it through Paystack. Cooperative360 keeps the record; it never holds your savings.' },
   { q: 'Can someone borrow more than they’ve saved?', a: 'No. It’s built in: what you can borrow is what you’ve saved, minus what you still owe. Admins can make it stricter, never looser.' },
-  { q: 'Can members pay by bank transfer?', a: 'Yes, through Paystack checkout (Pay with Transfer) or into their own CoopVault account number. Either way Paystack confirms it and the record updates by itself. There are no receipts to upload or chase.' },
+  { q: 'Can members pay by bank transfer?', a: 'Yes, through Paystack checkout (Pay with Transfer) or into their own Cooperative360 account number. Either way Paystack confirms it and the record updates by itself. There are no receipts to upload or chase.' },
   { q: 'How do I get my savings out?', a: 'Ask for a withdrawal in the app. The treasurer sends it to the bank account you verified, and you confirm when it lands. You can take out whatever isn’t backing a loan.' },
   { q: 'What does it cost?', a: 'There’s no subscription. Payments carry Paystack’s standard fee, and your group chooses whether members add it at checkout so savings stay whole.' },
-  { q: 'Do we need to download an app?', a: 'No. Open CoopVault in your phone’s browser and add it to your home screen. It works like an app on any Android phone or iPhone.' },
+  { q: 'Do we need to download an app?', a: 'No. Open Cooperative360 in your phone’s browser and add it to your home screen. It works like an app on any Android phone or iPhone.' },
 ]
 const install = () => promptInstall()
 </script>
@@ -40,7 +40,7 @@ const install = () => promptInstall()
       <nav class="relative mx-auto flex max-w-6xl items-center justify-between px-5 pt-safe md:px-8">
         <div class="flex items-center gap-2.5 py-5">
           <img src="/logo.svg" alt="" class="h-9 w-9 rounded-xl" />
-          <span class="font-display text-xl font-semibold text-white">CoopVault</span>
+          <span class="font-display text-xl font-semibold text-white">Cooperative360</span>
         </div>
         <div class="flex items-center gap-2">
           <RouterLink to="/login" class="rounded-xl px-3.5 py-2 text-sm font-semibold text-navy-100 hover:bg-white/10">Log in</RouterLink>
@@ -57,7 +57,7 @@ const install = () => promptInstall()
             Your cooperative’s money, <span class="text-glow-400">out of the group chat.</span>
           </h1>
           <p class="mt-6 max-w-xl text-[17px] leading-relaxed text-navy-100/80">
-            CoopVault keeps one shared record of every contribution, loan and repayment, so everyone can see who has paid,
+            Cooperative360 keeps one shared record of every contribution, loan and repayment, so everyone can see who has paid,
             what they owe and what’s in the pool. Payments confirm themselves through Paystack. No more “please post your receipt”.
           </p>
           <div class="mt-8 flex flex-col gap-3 sm:flex-row">
@@ -112,15 +112,15 @@ const install = () => promptInstall()
         <div>
           <p class="section-title">Sound familiar?</p>
           <h2 class="mt-3 font-display text-4xl font-semibold leading-tight tracking-tight md:text-5xl">The group chat was never meant to be a bank.</h2>
-          <p class="mt-5 text-[17px] leading-relaxed text-ink-soft">Receipts get buried, the treasurer keeps a spreadsheet nobody else can see, and every loan request turns into a long discussion. CoopVault answers these questions before anyone has to ask.</p>
+          <p class="mt-5 text-[17px] leading-relaxed text-ink-soft">Receipts get buried, the treasurer keeps a spreadsheet nobody else can see, and every loan request turns into a long discussion. Cooperative360 answers these questions before anyone has to ask.</p>
         </div>
         <div class="space-y-3">
           <div class="max-w-[85%] rounded-3xl rounded-bl-md bg-card px-4 py-3 shadow-soft"><p class="text-xs font-semibold text-brand-text">Treasurer</p><p>Please, who hasn’t paid for October? 🙏</p></div>
-          <div class="ml-auto max-w-[85%] rounded-3xl rounded-br-md bg-brand-soft px-4 py-3"><p class="text-xs font-semibold text-pos">CoopVault</p><p><b>9 of 12 paid.</b> Tunde, Ify and Musa have been reminded on WhatsApp.</p></div>
+          <div class="ml-auto max-w-[85%] rounded-3xl rounded-br-md bg-brand-soft px-4 py-3"><p class="text-xs font-semibold text-pos">Cooperative360</p><p><b>9 of 12 paid.</b> Tunde, Ify and Musa have been reminded on WhatsApp.</p></div>
           <div class="max-w-[85%] rounded-3xl rounded-bl-md bg-card px-4 py-3 shadow-soft"><p class="text-xs font-semibold text-accent-text">Chidi</p><p>I sent mine on Tuesday. Did it reach?</p></div>
-          <div class="ml-auto max-w-[85%] rounded-3xl rounded-br-md bg-brand-soft px-4 py-3"><p class="text-xs font-semibold text-pos">CoopVault</p><p>Confirmed ₦10,000 on 14 Oct. <span class="underline decoration-dotted">Receipt</span></p></div>
+          <div class="ml-auto max-w-[85%] rounded-3xl rounded-br-md bg-brand-soft px-4 py-3"><p class="text-xs font-semibold text-pos">Cooperative360</p><p>Confirmed ₦10,000 on 14 Oct. <span class="underline decoration-dotted">Receipt</span></p></div>
           <div class="max-w-[85%] rounded-3xl rounded-bl-md bg-card px-4 py-3 shadow-soft"><p class="text-xs font-semibold text-info">Ngozi</p><p>How much can I borrow for school fees?</p></div>
-          <div class="ml-auto max-w-[85%] rounded-3xl rounded-br-md bg-brand-soft px-4 py-3"><p class="text-xs font-semibold text-pos">CoopVault</p><p>Up to <b>₦85,000</b>, payable over 3 months.</p></div>
+          <div class="ml-auto max-w-[85%] rounded-3xl rounded-br-md bg-brand-soft px-4 py-3"><p class="text-xs font-semibold text-pos">Cooperative360</p><p>Up to <b>₦85,000</b>, payable over 3 months.</p></div>
         </div>
       </div>
     </section>
@@ -159,7 +159,7 @@ const install = () => promptInstall()
         <div>
           <p class="text-[13px] font-semibold uppercase tracking-[0.1em] text-glow-400">The one rule everyone agrees on</p>
           <h2 class="mt-3 font-display text-4xl font-semibold leading-tight tracking-tight text-white md:text-5xl">Nobody borrows more than they’ve saved.</h2>
-          <p class="mt-5 text-[17px] leading-relaxed text-navy-100/80">CoopVault works out every member’s limit from their confirmed savings and what they still owe, and it checks that the pool has the cash before a loan is sent. Nobody has to have an awkward conversation.</p>
+          <p class="mt-5 text-[17px] leading-relaxed text-navy-100/80">Cooperative360 works out every member’s limit from their confirmed savings and what they still owe, and it checks that the pool has the cash before a loan is sent. Nobody has to have an awkward conversation.</p>
         </div>
         <div class="rounded-3xl bg-white/[0.06] p-6 ring-1 ring-white/10">
           <div class="flex items-baseline justify-between"><span class="text-navy-100/70">Saved</span><span class="money text-2xl text-white">₦240,000</span></div>
@@ -234,7 +234,7 @@ const install = () => promptInstall()
     </section>
 
     <footer class="mx-auto flex max-w-6xl flex-col items-center justify-between gap-3 px-5 pb-10 text-sm text-ink-soft sm:flex-row md:px-8">
-      <div class="flex items-center gap-2"><img src="/logo.svg" alt="" class="h-6 w-6 rounded-md" /> CoopVault</div>
+      <div class="flex items-center gap-2"><img src="/logo.svg" alt="" class="h-6 w-6 rounded-md" /> Cooperative360</div>
       <p>Payments secured by Paystack · © {{ new Date().getFullYear() }}</p>
     </footer>
   </div>

@@ -56,7 +56,7 @@ async function submit() {
       <button class="btn-primary w-full" :disabled="busy">{{ busy ? 'Logging in…' : 'Log in' }}</button>
     </form>
     <template #footer>
-      New to CoopVault? <RouterLink to="/signup" class="link">Create an account</RouterLink>
+      New to Cooperative360? <RouterLink to="/signup" class="link">Create an account</RouterLink>
     </template>
   </AuthLayout>
 </template>

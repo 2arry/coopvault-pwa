@@ -1,5 +1,6 @@
 import { reactive, computed } from 'vue'
 import * as api from './api'
+import { forgetDevice } from './push'
 
 const COOP_KEY = 'coopvault.cooperative'
 const THEME_KEY = 'coopvault.theme'
@@ -80,8 +81,9 @@ export function startSession(payload) {
   state.user = payload.user
 }
 
-/** End the session on the server too; the local token is cleared either way. */
+/** End the session on the server too (which also stops push to this device); the local token is cleared either way. */
 export async function signOut() {
+  await forgetDevice()
   try { await api.post('auth.logout') } catch {}
   logout()
 }
@@ -130,7 +132,7 @@ export async function copyText(text, message = 'Copied') {
 }
 
 /** Native share sheet where available (great for WhatsApp), clipboard otherwise. */
-export async function shareText(text, title = 'CoopVault') {
+export async function shareText(text, title = 'Cooperative360') {
   if (navigator.share) {
     try {
       await navigator.share({ title, text })

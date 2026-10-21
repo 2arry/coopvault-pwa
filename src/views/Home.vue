@@ -90,8 +90,13 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
     <div v-if="pendingMember" class="px-5 pt-6">
       <div class="card p-7 text-center">
         <div class="mx-auto grid h-14 w-14 place-items-center rounded-2xl bg-warn-soft text-warn"><Icon name="clock" :size="28" /></div>
-        <h2 class="mt-4 font-display text-2xl font-semibold">{{ current.status === 'Pending' ? 'Almost there' : `Membership ${current.status.toLowerCase()}` }}</h2>
+        <h2 class="mt-4 font-display text-2xl font-semibold">{{ current.status === 'Pending' ? 'Almost there' : current.status === 'Left' ? 'You left this group' : `Membership ${current.status.toLowerCase()}` }}</h2>
         <p v-if="current.status === 'Pending'" class="mt-2 text-ink-soft">An admin of <b>{{ current.cooperative_name }}</b> needs to approve your request. They’ve been notified, and you’ll get a notification as soon as they do.</p>
+        <template v-else-if="current.status === 'Left' && current.savings > 0">
+          <p class="mt-2 text-ink-soft"><b class="money text-ink">{{ money(current.savings, currency) }}</b> reached {{ current.cooperative_name }} after you left. It’s still yours.</p>
+          <RouterLink to="/withdraw" class="btn-primary mt-5 w-full">Withdraw it</RouterLink>
+        </template>
+        <p v-else-if="current.status === 'Suspended' && current.savings > 0" class="mt-2 text-ink-soft">Your <b class="money text-ink">{{ money(current.savings, currency) }}</b> in savings is safe. Contact your cooperative admin for help.</p>
         <p v-else class="mt-2 text-ink-soft">Contact your cooperative admin for help.</p>
       </div>
       <div class="mt-4"><InstallPrompt /></div>
@@ -151,7 +156,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
       </section>
       <div v-for="ob in openingBalances" :key="ob.name" class="card border-brand-text/30 p-4">
         <p class="text-xs font-semibold text-brand-text">Please confirm</p>
-        <p class="mt-1 text-[15px]">Your opening balance of <b class="money">{{ money(ob.amount, currency) }}</b>, what you’d saved before CoopVault{{ ob.contribution_date ? ` (as of ${date(ob.contribution_date)})` : '' }}.</p>
+        <p class="mt-1 text-[15px]">Your opening balance of <b class="money">{{ money(ob.amount, currency) }}</b>, what you’d saved before Cooperative360{{ ob.contribution_date ? ` (as of ${date(ob.contribution_date)})` : '' }}.</p>
         <p v-if="ob.notes" class="mt-1 text-sm text-ink-soft">“{{ ob.notes }}”</p>
         <div class="mt-3 grid grid-cols-2 gap-2">
           <button class="btn-secondary btn-sm" :disabled="busy === ob.name" @click="respondOpening(ob, false)">That’s not right</button>

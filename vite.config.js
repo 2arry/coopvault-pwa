@@ -10,8 +10,8 @@ export default defineConfig({
       includeAssets: ['favicon.ico', 'apple-touch-icon-180x180.png', 'logo.svg'],
       manifest: {
         id: '/',
-        name: 'CoopVault',
-        short_name: 'CoopVault',
+        name: 'Cooperative360',
+        short_name: 'Coop360',
         description: 'Savings, contributions and loans for your cooperative',
         theme_color: '#1d4ed8',
         background_color: '#f5f7fb',

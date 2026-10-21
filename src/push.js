@@ -29,6 +29,25 @@ export async function enablePush() {
   return sub
 }
 
+/** Hide amounts and names on this phone's lock screen. */
+export async function setDiscreet(on) {
+  const sub = await currentSubscription()
+  if (!sub) throw new Error('Turn on notifications on this phone first.')
+  return api.post('notifications.set_privacy', { endpoint: sub.endpoint, discreet: on ? 1 : 0 })
+}
+
+export async function deviceStatus() {
+  const sub = await currentSubscription().catch(() => null)
+  if (!sub) return { subscribed: false, discreet: false }
+  return api.get('notifications.device_status', { endpoint: sub.endpoint }).catch(() => ({ subscribed: true, discreet: false }))
+}
+
+/** Stop this browser receiving pushes (used when signing out). The server drops the subscription too. */
+export async function forgetDevice() {
+  const sub = await currentSubscription().catch(() => null)
+  if (sub) await sub.unsubscribe().catch(() => {})
+}
+
 export async function disablePush() {
   const sub = await currentSubscription()
   if (!sub) return

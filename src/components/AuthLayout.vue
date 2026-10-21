@@ -5,9 +5,9 @@ defineProps({ title: String, subtitle: String })
 <template>
   <div class="flex min-h-screen flex-col px-6 pt-safe">
     <div class="flex items-center justify-between pt-6">
-      <RouterLink to="/" class="flex items-center gap-2.5" aria-label="CoopVault home">
+      <RouterLink to="/" class="flex items-center gap-2.5" aria-label="Cooperative360 home">
         <img src="/logo.svg" alt="" class="h-10 w-10 rounded-xl shadow-sm" />
-        <span class="font-display text-lg font-semibold tracking-tight">CoopVault</span>
+        <span class="font-display text-lg font-semibold tracking-tight">Cooperative360</span>
       </RouterLink>
       <slot name="corner" />
     </div>

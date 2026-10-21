@@ -65,7 +65,7 @@ async function newCode() {
 }
 
 function shareInvite() {
-  shareText(`Join ${coop.value.cooperative_name} on CoopVault. It’s where we track our contributions and loans now.\n\nTap to join: ${inviteLink.value}`, `Join ${coop.value.cooperative_name}`)
+  shareText(`Join ${coop.value.cooperative_name} on Cooperative360. It’s where we track our contributions and loans now.\n\nTap to join: ${inviteLink.value}`, `Join ${coop.value.cooperative_name}`)
 }
 </script>
 
@@ -150,7 +150,7 @@ function shareInvite() {
         </template>
         <div v-else class="flex gap-3 rounded-3xl bg-sunk p-4 text-sm text-ink-soft">
           <Icon name="info" class="mt-0.5 shrink-0 text-ink" />
-          <p>Online payments aren’t switched on for this CoopVault yet. Once the Paystack keys are added, connect the group’s account here.</p>
+          <p>Online payments aren’t switched on for this Cooperative360 yet. Once the Paystack keys are added, connect the group’s account here.</p>
         </div>
       </section>
 

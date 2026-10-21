@@ -17,7 +17,7 @@ const error = ref('')
 
 const confirmed = computed(() => r.value?.status === 'Confirmed')
 const opening = computed(() => r.value?.payment_method === 'Opening Balance')
-const methodLabel = computed(() => ({ Paystack: 'Paid online (Paystack)', 'Opening Balance': 'Brought over from before CoopVault', 'Bank Transfer': 'Bank transfer', Cash: 'Cash' }[r.value?.payment_method] || r.value?.payment_method))
+const methodLabel = computed(() => ({ Paystack: 'Paid online (Paystack)', 'Opening Balance': 'Brought over from before Cooperative360', 'Bank Transfer': 'Bank transfer', Cash: 'Cash' }[r.value?.payment_method] || r.value?.payment_method))
 const statusLabel = computed(() => ({ Confirmed: 'Confirmed', Pending: 'Waiting for you to confirm', Rejected: 'Declined', Reversed: 'Reversed (refunded or disputed)' }[r.value?.status] || r.value?.status))
 const statusClass = computed(() => (confirmed.value ? 'text-pos' : ['Rejected', 'Reversed'].includes(r.value?.status) ? 'text-neg' : 'text-warn'))
 const verb = computed(() => (r.value?.doctype === 'Coop Contribution' ? 'saved' : 'repaid'))
@@ -30,7 +30,7 @@ function share() {
     `${x.member_name} ${opening.value ? 'brought over' : verb.value} ${money(x.amount, x.currency)}`,
     `${date(x.date)} · ${methodLabel.value}`,
     `Ref: ${x.name}${x.reference && x.reference !== x.name ? ` / ${x.reference}` : ''}`,
-    `${statusLabel.value} on CoopVault`,
+    `${statusLabel.value} on Cooperative360`,
   ]
   shareText(lines.join('\n'), 'Payment receipt')
 }

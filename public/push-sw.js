@@ -4,14 +4,14 @@ self.addEventListener('push', (event) => {
   try {
     data = event.data ? event.data.json() : {}
   } catch (e) {
-    data = { title: 'CoopVault', body: event.data ? event.data.text() : '' }
+    data = { title: 'Cooperative360', body: event.data ? event.data.text() : '' }
   }
   event.waitUntil(
-    self.registration.showNotification(data.title || 'CoopVault', {
+    self.registration.showNotification(data.title || 'Cooperative360', {
       body: data.body || '',
       icon: '/pwa-192x192.png',
       badge: '/pwa-64x64.png',
-      tag: data.tag || 'coopvault',
+      tag: data.tag || 'c360',
       renotify: true,
       data: { url: data.url || '/notifications' },
     }),

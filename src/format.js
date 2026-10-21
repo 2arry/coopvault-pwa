@@ -106,7 +106,7 @@ export function whatsappLink(phone, text) {
 
 export const appUrl = (path = '') => `${location.origin}${path}`
 
-// Paystack's local fee, as set in CoopVault Settings, in words.
+// Paystack's local fee, as set in Cooperative360 Settings, in words.
 export function feeRule(fees, currency) {
   if (!fees) return ''
   const flat = fees.flat ? ` + ${money(fees.flat, currency)}` : ''

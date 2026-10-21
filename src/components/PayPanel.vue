@@ -117,7 +117,7 @@ async function submit() {
         <template v-if="busy">Opening secure checkout…</template>
         <template v-else><Icon name="lock" :size="18" /> Pay {{ value ? money(total, currency) : '' }}</template>
       </button>
-      <p class="-mt-3 text-center text-xs text-ink-faint">Secured by Paystack. CoopVault never sees your card details.</p>
+      <p class="-mt-3 text-center text-xs text-ink-faint">Secured by Paystack. Cooperative360 never sees your card details.</p>
       <p v-if="state.paystack.test_mode" class="flex gap-2 rounded-2xl bg-info-soft p-3 text-xs text-info">
         <Icon name="info" :size="16" class="shrink-0" />
         <span>Demo mode: no real money moves. In the Paystack window choose <b>Success</b>, or use the test card <b class="num">4084 0840 8408 4081</b>, any future expiry, CVV <b>408</b>.</span>

@@ -3,7 +3,7 @@ import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as api from '../api'
 import { state, current, dashboard, loadDashboard, logout, signOut as endSession, toast, setTheme, copyText } from '../store'
-import { pushSupported, needsInstallForPush, currentSubscription, enablePush, disablePush } from '../push'
+import { pushSupported, needsInstallForPush, enablePush, disablePush, deviceStatus, setDiscreet, forgetDevice } from '../push'
 import { initials } from '../format'
 import PageHeader from '../components/PageHeader.vue'
 import InstallPrompt from '../components/InstallPrompt.vue'
@@ -17,7 +17,8 @@ const editing = ref(false)
 const changingPw = ref(false)
 const showMethods = ref(false)
 const leaving = ref(null)
-const profile = ref({ full_name: state.user?.full_name, phone: state.user?.mobile_no || '' })
+const profile = ref({ full_name: state.user?.full_name, phone: state.user?.mobile_no || '', password: '' })
+const phoneChanged = computed(() => profile.value.phone.replace(/\s/g, '') !== (state.user?.mobile_no || ''))
 const pw = ref({ old_password: '', new_password: '' })
 const methods = ref([])
 const error = ref('')
@@ -25,6 +26,7 @@ const busy = ref(false)
 
 const payout = computed(() => state.user?.payout_account)
 const pushOn = ref(false)
+const discreet = ref(false)
 async function togglePush() {
   busy.value = true
   try {
@@ -32,12 +34,22 @@ async function togglePush() {
     else { await enablePush(); pushOn.value = true; toast('Notifications are on for this phone') }
   } catch (e) { toast(e.message, 'error') } finally { busy.value = false }
 }
+async function toggleDiscreet() {
+  const next = !discreet.value
+  try {
+    await setDiscreet(next)
+    discreet.value = next
+    toast(next ? 'Amounts are hidden on the lock screen' : 'Amounts show on the lock screen')
+  } catch (e) { toast(e.message, 'error') }
+}
 const d = computed(() => (current.value?.status === 'Active' ? dashboard.value : null))
 const dva = computed(() => d.value?.dedicated_account)
 const dvaAvailable = computed(() => !!d.value?.payments?.dedicated_accounts)
 
 onMounted(async () => {
-  pushOn.value = !!(await currentSubscription().catch(() => null))
+  const device = await deviceStatus()
+  pushOn.value = device.subscribed
+  discreet.value = device.discreet
   if (current.value?.status === 'Active') loadDashboard().catch(() => {})
   if (state.paystack.enabled) methods.value = await api.get('payments.list_methods').catch(() => [])
 })
@@ -46,9 +58,12 @@ async function saveProfile() {
   busy.value = true
   error.value = ''
   try {
-    state.user = await api.post('auth.update_profile', profile.value)
+    const { full_name, phone, password } = profile.value
+    state.user = await api.post('auth.update_profile', phoneChanged.value ? { full_name, phone, password } : { full_name })
+    const changed = phoneChanged.value
     editing.value = false
-    toast('Profile updated')
+    profile.value = { full_name: state.user.full_name, phone: state.user.mobile_no || '', password: '' }
+    toast(changed ? 'Phone number changed. Payouts, loans and withdrawals pause for 3 days.' : 'Profile updated')
   } catch (e) { error.value = e.message } finally { busy.value = false }
 }
 async function changePassword() {
@@ -90,6 +105,7 @@ async function logoutEverywhere() {
   busy.value = true
   try {
     await api.post('auth.logout_all_devices')
+    await forgetDevice()
     logout()
     router.replace('/login')
   } catch (e) {
@@ -181,10 +197,18 @@ async function signOut() {
           <span class="grid h-10 w-10 place-items-center rounded-2xl bg-brand-soft text-brand-text"><Icon name="bell" :size="18" /></span>
           <span class="flex-1">
             <span class="block text-[15px] font-semibold">Notifications on this phone</span>
-            <span class="block text-xs text-ink-soft">{{ needsInstallForPush ? 'Add CoopVault to your home screen first' : pushOn ? 'On: payments, loans and reminders' : 'Off' }}</span>
+            <span class="block text-xs text-ink-soft">{{ needsInstallForPush ? 'Add Cooperative360 to your home screen first' : pushOn ? 'On: payments, loans and reminders' : 'Off' }}</span>
           </span>
           <button v-if="!needsInstallForPush" class="btn-sm" :class="pushOn ? 'btn-secondary' : 'btn-primary'" :disabled="busy" @click="togglePush">{{ pushOn ? 'Turn off' : 'Turn on' }}</button>
         </div>
+        <label v-if="pushOn" class="card mt-2 flex cursor-pointer items-center gap-3.5 p-4">
+          <span class="grid h-10 w-10 place-items-center rounded-2xl bg-sunk text-ink-soft"><Icon name="eye" :size="18" /></span>
+          <span class="flex-1">
+            <span class="block text-[15px] font-semibold">Hide amounts on the lock screen</span>
+            <span class="block text-xs text-ink-soft">Notifications just say there’s an update</span>
+          </span>
+          <input type="checkbox" class="h-6 w-6 accent-[rgb(var(--brand))]" :checked="discreet" @click.prevent="toggleDiscreet" />
+        </label>
       </section>
 
       <!-- Appearance -->
@@ -209,7 +233,7 @@ async function signOut() {
         </button>
         <button class="flex w-full items-center gap-3.5 p-4 text-left text-neg" @click="signOut"><Icon name="logout" /><span class="flex-1 font-semibold">Log out</span></button>
       </section>
-      <p class="text-center text-xs text-ink-faint">CoopVault · payments secured by Paystack</p>
+      <p class="text-center text-xs text-ink-faint">Cooperative360 · payments secured by Paystack</p>
     </div>
 
     <Sheet :open="editing" title="Edit profile" @close="editing = false">
@@ -217,6 +241,10 @@ async function signOut() {
         <ErrorBox :message="error" />
         <div><label class="label" for="pname">Full name</label><input id="pname" v-model="profile.full_name" class="input" required /></div>
         <div><label class="label" for="pphone">Phone number</label><input id="pphone" v-model="profile.phone" type="tel" class="input" placeholder="0801 234 5678" /></div>
+        <template v-if="phoneChanged">
+          <p class="flex gap-2 rounded-2xl bg-warn-soft p-3 text-xs text-warn"><Icon name="shield" :size="16" class="shrink-0" /> Your admins send password reset codes to this number. Changing it tells them, and pauses payouts, loans and withdrawals for 3 days.</p>
+          <div><label class="label" for="ppass">Your password</label><input id="ppass" v-model="profile.password" type="password" class="input" autocomplete="current-password" required /></div>
+        </template>
         <button class="btn-primary w-full" :disabled="busy">Save</button>
       </form>
     </Sheet>
@@ -228,7 +256,7 @@ async function signOut() {
         <button class="btn-primary w-full" :disabled="busy">Change password</button>
       </form>
     </Sheet>
-    <Sheet :open="showMethods" title="Saved payment methods" subtitle="Stored securely by Paystack. CoopVault never sees your card number." @close="showMethods = false">
+    <Sheet :open="showMethods" title="Saved payment methods" subtitle="Stored securely by Paystack. Cooperative360 never sees your card number." @close="showMethods = false">
       <div v-if="methods.length" class="divide-soft">
         <div v-for="m in methods" :key="m.name" class="flex items-center gap-3 py-3">
           <span class="grid h-10 w-10 place-items-center rounded-2xl bg-sunk"><Icon :name="m.channel === 'card' ? 'card' : 'bank'" :size="18" /></span>
