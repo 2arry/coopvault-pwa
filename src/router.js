@@ -2,30 +2,46 @@ import { createRouter, createWebHistory } from 'vue-router'
 import { state, loadSession, isLoggedIn, current, isAdmin, logout } from './store'
 import { setUnauthorizedHandler } from './api'
 
+const JOIN_KEY = 'coopvault.joinCode'
+// Resolved at build time so nested folders (views/admin/…) are code-split correctly
+const pages = import.meta.glob('./views/**/*.vue')
+const view = (path) => {
+  const page = pages[`./views/${path}.vue`]
+  if (!page) throw new Error(`Unknown view: ${path}`)
+  return page
+}
+
 const routes = [
-  { path: '/login', component: () => import('./views/Login.vue'), meta: { guest: true } },
-  { path: '/signup', component: () => import('./views/Signup.vue'), meta: { guest: true } },
-  { path: '/forgot', component: () => import('./views/Forgot.vue'), meta: { guest: true } },
-  { path: '/welcome', component: () => import('./views/Onboarding.vue'), meta: { noCoop: true } },
-  { path: '/', component: () => import('./views/Home.vue'), meta: { tab: 'home' } },
-  { path: '/contribute', component: () => import('./views/Contribute.vue') },
-  { path: '/history', component: () => import('./views/History.vue'), meta: { tab: 'history' } },
-  { path: '/loans', component: () => import('./views/Loans.vue'), meta: { tab: 'loans' } },
-  { path: '/loans/new', component: () => import('./views/LoanApply.vue') },
-  { path: '/loans/:name', component: () => import('./views/LoanDetail.vue'), props: true },
-  { path: '/loans/:name/repay', component: () => import('./views/Repay.vue'), props: true },
-  { path: '/announcements', component: () => import('./views/Announcements.vue') },
-  { path: '/profile', component: () => import('./views/Profile.vue'), meta: { tab: 'profile', noCoop: true } },
-  { path: '/pay/callback', component: () => import('./views/PayCallback.vue') },
-  { path: '/admin', component: () => import('./views/admin/Admin.vue'), meta: { tab: 'admin', admin: true } },
-  { path: '/admin/members/:name', component: () => import('./views/admin/MemberDetail.vue'), props: true, meta: { tab: 'admin', admin: true } },
+  { path: '/', component: view('Landing'), meta: { public: true, landing: true } },
+  { path: '/login', component: view('Login'), meta: { guest: true } },
+  { path: '/signup', component: view('Signup'), meta: { guest: true } },
+  { path: '/forgot', component: view('Forgot'), meta: { guest: true } },
+  { path: '/join/:code', redirect: (to) => ({ path: '/welcome', query: { code: to.params.code } }) },
+  { path: '/welcome', component: view('Onboarding'), meta: { noCoop: true, inviteFriendly: true } },
+  { path: '/home', component: view('Home'), meta: { tab: 'home' } },
+  { path: '/save', component: view('Save') },
+  { path: '/contribute', redirect: '/save' },
+  { path: '/activity', component: view('Activity'), meta: { tab: 'activity' } },
+  { path: '/history', redirect: '/activity' },
+  { path: '/loans', component: view('Loans'), meta: { tab: 'loans' } },
+  { path: '/loans/new', component: view('LoanApply') },
+  { path: '/loans/:name', component: view('LoanDetail'), props: true },
+  { path: '/loans/:name/repay', component: view('Repay'), props: true },
+  { path: '/receipt/:doctype/:name', component: view('Receipt'), props: true },
+  { path: '/autosave', component: view('Autosave') },
+  { path: '/announcements', component: view('Announcements') },
+  { path: '/profile', component: view('Profile'), meta: { tab: 'profile', noCoop: true } },
+  { path: '/profile/payout', component: view('PayoutAccount'), meta: { noCoop: true } },
+  { path: '/pay/callback', component: view('PayCallback') },
+  { path: '/admin', component: view('admin/Admin'), meta: { tab: 'admin', admin: true } },
+  { path: '/admin/members/:name', component: view('admin/MemberDetail'), props: true, meta: { tab: 'admin', admin: true } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
 const router = createRouter({
   history: createWebHistory(),
   routes,
-  scrollBehavior: () => ({ top: 0 }),
+  scrollBehavior: (to, from, saved) => saved || { top: 0 },
 })
 
 setUnauthorizedHandler(() => {
@@ -33,16 +49,28 @@ setUnauthorizedHandler(() => {
   router.replace({ path: '/login', query: { expired: 1 } })
 })
 
+export const pendingJoinCode = () => {
+  try { return sessionStorage.getItem(JOIN_KEY) || '' } catch { return '' }
+}
+export const clearJoinCode = () => {
+  try { sessionStorage.removeItem(JOIN_KEY) } catch {}
+}
+
 router.beforeEach(async (to) => {
-  // Invite links look like /welcome?code=ABC123; keep the code through login/sign-up
+  // Invite links (/join/ABC123 or ?code=ABC123) keep the code through sign-up / login
   if (to.query.code) {
-    try { sessionStorage.setItem('coopvault.joinCode', String(to.query.code)) } catch {}
+    try { sessionStorage.setItem(JOIN_KEY, String(to.query.code).toUpperCase()) } catch {}
   }
   if (!state.loaded) await loadSession().catch(() => {})
-  if (to.meta.guest) return isLoggedIn.value ? '/' : true
-  if (!isLoggedIn.value) return { path: '/login', query: to.fullPath !== '/' ? { next: to.fullPath } : {} }
+
+  if (to.meta.landing) return isLoggedIn.value ? '/home' : true
+  if (to.meta.guest) return isLoggedIn.value ? '/home' : true
+  if (!isLoggedIn.value) {
+    if (to.meta.inviteFriendly && pendingJoinCode()) return '/signup'
+    return { path: '/login', query: { next: to.fullPath } }
+  }
   if (!to.meta.noCoop && !current.value) return '/welcome'
-  if (to.meta.admin && !isAdmin.value) return '/'
+  if (to.meta.admin && !isAdmin.value) return '/home'
   return true
 })
 

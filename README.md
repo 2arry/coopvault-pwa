@@ -1,10 +1,12 @@
 # CoopVault PWA
 
-Mobile-first Progressive Web App for cooperative members and admins. Members install it to their home screen
-(no app store needed) to see their savings, contribute, borrow and repay. Admins approve members, confirm payments and
-approve loans.
+Mobile-first Progressive Web App for cooperative members and admins, with a public landing page at `/`.
+Members install it to their home screen (no app store needed) to see where they stand, save, borrow and repay.
+Admins see who has paid this period, send WhatsApp reminders, confirm transfers and approve loans.
 
-Built with Vue 3, Vite, Tailwind CSS and `vite-plugin-pwa`. It talks to the CoopVault Frappe app (separate repo).
+Built with Vue 3, Vite, Tailwind CSS, `vite-plugin-pwa` and Paystack InlineJS v2 (`@paystack/inline-js`), with
+self-hosted Fraunces and Plus Jakarta Sans fonts so it works offline. Light and dark themes follow the phone's
+setting, with a manual switch under Me → Appearance. It talks to the CoopVault Frappe app (separate repo).
 
 ## Develop
 

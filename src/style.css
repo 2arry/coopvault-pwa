@@ -2,27 +2,136 @@
 @tailwind components;
 @tailwind utilities;
 
+/* Theme tokens (RGB triplets so Tailwind can apply opacity). Light first, dark overrides below. */
+:root {
+  color-scheme: light;
+  --paper: 246 243 235;
+  --card: 255 255 255;
+  --sunk: 238 234 223;
+  --line: 28 40 33;
+  --ink: 20 31 25;
+  --ink-soft: 82 96 88;
+  --ink-faint: 132 144 137;
+  --brand: 11 61 46;
+  --brand-strong: 6 38 28;
+  --brand-soft: 222 237 228;
+  --brand-ink: 255 255 255;
+  --brand-text: 14 96 68;
+  --gold: 201 150 43;
+  --gold-soft: 249 237 207;
+  --gold-text: 133 93 10;
+  --pos: 21 125 72;
+  --pos-soft: 221 242 229;
+  --warn: 176 98 8;
+  --warn-soft: 253 240 213;
+  --neg: 192 41 62;
+  --neg-soft: 253 228 231;
+  --info: 37 99 235;
+  --info-soft: 225 234 254;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root:not([data-theme='light']) {
+    color-scheme: dark;
+    --paper: 10 16 13;
+    --card: 19 27 23;
+    --sunk: 27 37 32;
+    --line: 226 236 230;
+    --ink: 233 240 236;
+    --ink-soft: 164 178 170;
+    --ink-faint: 116 132 124;
+    --brand: 40 132 95;
+    --brand-strong: 33 112 80;
+    --brand-soft: 20 46 36;
+    --brand-ink: 255 255 255;
+    --brand-text: 112 210 165;
+    --gold: 228 184 84;
+    --gold-soft: 50 40 16;
+    --gold-text: 236 198 112;
+    --pos: 98 212 148;
+    --pos-soft: 17 48 32;
+    --warn: 244 190 82;
+    --warn-soft: 54 40 13;
+    --neg: 247 122 140;
+    --neg-soft: 60 21 29;
+    --info: 140 172 255;
+    --info-soft: 23 33 62;
+  }
+}
+
+:root[data-theme='dark'] {
+  color-scheme: dark;
+  --paper: 10 16 13;
+  --card: 19 27 23;
+  --sunk: 27 37 32;
+  --line: 226 236 230;
+  --ink: 233 240 236;
+  --ink-soft: 164 178 170;
+  --ink-faint: 116 132 124;
+  --brand: 40 132 95;
+  --brand-strong: 33 112 80;
+  --brand-soft: 20 46 36;
+  --brand-ink: 255 255 255;
+  --brand-text: 112 210 165;
+  --gold: 228 184 84;
+  --gold-soft: 50 40 16;
+  --gold-text: 236 198 112;
+  --pos: 98 212 148;
+  --pos-soft: 17 48 32;
+  --warn: 244 190 82;
+  --warn-soft: 54 40 13;
+  --neg: 247 122 140;
+  --neg-soft: 60 21 29;
+  --info: 140 172 255;
+  --info-soft: 23 33 62;
+}
+
 @layer base {
-  html { -webkit-tap-highlight-color: transparent; }
-  body { @apply bg-paper text-ink font-sans antialiased; }
+  html { -webkit-tap-highlight-color: transparent; text-rendering: optimizeLegibility; }
+  body { @apply bg-paper text-ink font-sans antialiased; font-feature-settings: 'ss01'; }
   input, select, textarea { font-size: 16px; } /* stops iOS zooming into fields */
+  input[type='number']::-webkit-outer-spin-button, input[type='number']::-webkit-inner-spin-button { -webkit-appearance: none; margin: 0; }
+  input[type='number'] { -moz-appearance: textfield; appearance: textfield; }
+  :focus-visible { outline: 2px solid rgb(var(--brand-text)); outline-offset: 2px; }
+  ::selection { background: rgb(var(--gold) / 0.35); }
 }
 
 @layer components {
-  .card { @apply bg-white rounded-2xl border border-black/5 shadow-[0_1px_2px_rgba(16,24,20,0.04)]; }
-  .btn { @apply inline-flex items-center justify-center gap-2 rounded-xl px-4 py-3 font-semibold transition active:scale-[0.98] disabled:opacity-50 disabled:pointer-events-none; }
-  .btn-primary { @apply btn bg-brand-800 text-white hover:bg-brand-900; }
-  .btn-secondary { @apply btn bg-white text-ink border border-black/10 hover:bg-black/[0.03]; }
-  .btn-danger { @apply btn bg-red-50 text-red-700 hover:bg-red-100; }
-  .btn-sm { @apply px-3 py-2 text-sm rounded-lg; }
-  .label { @apply block text-sm font-semibold text-ink mb-1.5; }
-  .hint { @apply text-xs text-ink-soft mt-1; }
-  .input { @apply w-full rounded-xl border border-black/10 bg-white px-3.5 py-3 outline-none transition placeholder:text-ink-faint focus:border-brand-600 focus:ring-4 focus:ring-brand-100; }
-  .section-title { @apply text-xs font-bold uppercase tracking-wider text-ink-faint; }
-  .num { font-variant-numeric: tabular-nums; }
+  .card { @apply rounded-3xl border border-line/[0.07] bg-card shadow-soft; }
+  .card-flat { @apply rounded-3xl border border-line/[0.07] bg-card; }
+  .btn { @apply inline-flex select-none items-center justify-center gap-2 rounded-2xl px-4 py-3 text-[15px] font-semibold transition duration-150 active:scale-[0.98] disabled:pointer-events-none disabled:opacity-45; }
+  .btn-primary { @apply btn bg-brand text-brand-ink shadow-[0_8px_20px_-10px_rgb(var(--brand)/0.7)] hover:bg-brand-strong; }
+  .btn-secondary { @apply btn border border-line/15 bg-card text-ink hover:bg-sunk; }
+  .btn-ghost { @apply btn text-ink-soft hover:bg-line/5; }
+  .btn-gold { @apply btn bg-coin-400 text-forest-950 hover:bg-coin-300; }
+  .btn-danger { @apply btn bg-neg-soft text-neg hover:brightness-95; }
+  .btn-sm { @apply rounded-xl px-3 py-2 text-sm; }
+  .btn-lg { @apply rounded-2xl px-5 py-4 text-base; }
+  .label { @apply mb-1.5 block text-sm font-semibold text-ink; }
+  .hint { @apply mt-1.5 text-xs leading-relaxed text-ink-soft; }
+  .input { @apply w-full rounded-2xl border border-line/15 bg-card px-4 py-3 text-ink outline-none transition placeholder:text-ink-faint focus:border-brand-text focus:ring-4 focus:ring-brand-text/15; }
+  .section-title { @apply text-[13px] font-semibold uppercase tracking-[0.1em] text-ink-faint; }
+  .num { font-variant-numeric: tabular-nums lining-nums; }
+  .money { @apply font-display; font-variant-numeric: lining-nums tabular-nums; font-optical-sizing: auto; letter-spacing: -0.01em; }
+  .chip { @apply inline-flex items-center gap-1 rounded-full px-2.5 py-1 text-xs font-semibold; }
+  .seg { @apply grid gap-1 rounded-2xl bg-line/[0.06] p-1 text-sm font-semibold; }
+  .seg > button { @apply rounded-xl py-2 text-ink-soft transition; }
+  .seg > button.on { @apply bg-card text-ink shadow-sm; }
+  .link { @apply font-semibold text-brand-text; }
+  .divide-soft > * + * { border-top: 1px solid rgb(var(--line) / 0.07); }
 }
 
 .pb-safe { padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 0.5rem); }
 .pt-safe { padding-top: env(safe-area-inset-top, 0px); }
-.fade-enter-active, .fade-leave-active { transition: opacity .2s, transform .2s; }
+.fade-enter-active, .fade-leave-active { transition: opacity .18s ease, transform .18s ease; }
 .fade-enter-from, .fade-leave-to { opacity: 0; transform: translateY(6px); }
+.sheet-enter-active, .sheet-leave-active { transition: opacity .2s ease; }
+.sheet-enter-active .sheet-panel, .sheet-leave-active .sheet-panel { transition: transform .25s cubic-bezier(.2,.8,.2,1); }
+.sheet-enter-from, .sheet-leave-to { opacity: 0; }
+.sheet-enter-from .sheet-panel, .sheet-leave-to .sheet-panel { transform: translateY(40px); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { scrollbar-width: none; }
+
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { animation-duration: .01ms !important; transition-duration: .01ms !important; }
+}

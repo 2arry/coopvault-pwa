@@ -4,25 +4,35 @@ import { money, date } from '../format'
 import Icon from './Icon.vue'
 import StatusPill from './StatusPill.vue'
 
-const props = defineProps({ entry: Object, currency: String })
+const props = defineProps({ entry: Object, currency: String, showName: String })
 const meta = computed(() => ({
-  Contribution: { icon: 'arrowDown', tone: 'bg-brand-50 text-brand-700', label: 'Contribution' },
-  Loan: { icon: 'arrowUp', tone: 'bg-amber-50 text-amber-700', label: 'Loan' },
-  Repayment: { icon: 'check', tone: 'bg-sky-50 text-sky-700', label: 'Loan repayment' },
+  Contribution: { icon: 'arrowDown', tone: 'bg-pos-soft text-pos', label: 'Saved', sign: '+' },
+  Loan: { icon: 'arrowUp', tone: 'bg-gold-soft text-gold-text', label: 'Borrowed', sign: '' },
+  Repayment: { icon: 'check', tone: 'bg-info-soft text-info', label: 'Repaid loan', sign: '' },
 }[props.entry.type]))
-const link = computed(() => props.entry.type === 'Loan' ? `/loans/${props.entry.name}` : props.entry.loan ? `/loans/${props.entry.loan}` : null)
+const link = computed(() => {
+  const e = props.entry
+  if (e.type === 'Loan') return `/loans/${e.name}`
+  return `/receipt/${encodeURIComponent(e.doctype)}/${encodeURIComponent(e.name)}`
+})
+const settled = computed(() => ['Confirmed', 'Active', 'Repaid'].includes(props.entry.status))
+const methodLabel = (m) => ({ Paystack: 'Online', 'Bank Transfer': 'Transfer' }[m] || m)
 </script>
 
 <template>
-  <component :is="link ? 'RouterLink' : 'div'" :to="link" class="flex items-center gap-3 py-3">
-    <div class="rounded-full p-2" :class="meta.tone"><Icon :name="meta.icon" :size="18" /></div>
+  <RouterLink :to="link" class="-mx-2 flex items-center gap-3 rounded-2xl px-2 py-3 transition hover:bg-line/[0.03]">
+    <div class="grid h-10 w-10 place-items-center rounded-2xl" :class="settled ? meta.tone : 'bg-line/[0.06] text-ink-faint'">
+      <Icon :name="meta.icon" :size="18" />
+    </div>
     <div class="min-w-0 flex-1">
-      <p class="truncate text-sm font-semibold">{{ meta.label }}</p>
-      <p class="text-xs text-ink-soft">{{ date(entry.date) }}<span v-if="entry.method"> · {{ entry.method }}</span></p>
+      <p class="truncate text-[15px] font-semibold">{{ showName ? `${showName} · ${meta.label.toLowerCase()}` : meta.label }}</p>
+      <p class="truncate text-xs text-ink-soft">{{ date(entry.date, { day: 'numeric', month: 'short' }) }}<span v-if="entry.method"> · {{ methodLabel(entry.method) }}</span></p>
     </div>
     <div class="text-right">
-      <p class="num text-sm font-bold" :class="entry.status === 'Rejected' ? 'text-ink-faint line-through' : ''">{{ money(entry.amount, currency) }}</p>
-      <StatusPill v-if="!['Confirmed', 'Active'].includes(entry.status)" :status="entry.status" />
+      <p class="num text-[15px] font-semibold" :class="[entry.status === 'Rejected' || entry.status === 'Cancelled' ? 'text-ink-faint line-through' : '', entry.type === 'Contribution' && settled ? 'text-pos' : '']">
+        {{ entry.type === 'Contribution' && settled ? meta.sign : '' }}{{ money(entry.amount, currency) }}
+      </p>
+      <StatusPill v-if="!settled" :status="entry.status" />
     </div>
-  </component>
+  </RouterLink>
 </template>

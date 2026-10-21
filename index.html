@@ -3,9 +3,13 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
-    <title>CoopVault</title>
-    <meta name="description" content="Track cooperative contributions, savings and loans" />
-    <meta name="theme-color" content="#065f46" />
+    <title>CoopVault: savings and loans for your cooperative</title>
+    <meta name="description" content="One shared record of every contribution, loan and repayment in your cooperative. Pay in a tap, borrow fairly, and never argue about who paid." />
+    <meta name="theme-color" content="#f6f3eb" media="(prefers-color-scheme: light)" />
+    <meta name="theme-color" content="#0a100d" media="(prefers-color-scheme: dark)" />
+    <meta property="og:title" content="CoopVault" />
+    <meta property="og:description" content="Your cooperative's money, out of the group chat. Track contributions, loans and repayments together." />
+    <meta property="og:image" content="/pwa-512x512.png" />
     <link rel="icon" href="/favicon.ico" sizes="48x48" />
     <link rel="icon" href="/logo.svg" sizes="any" type="image/svg+xml" />
     <link rel="apple-touch-icon" href="/apple-touch-icon-180x180.png" />
@@ -13,9 +17,10 @@
     <meta name="mobile-web-app-capable" content="yes" />
     <meta name="apple-mobile-web-app-status-bar-style" content="default" />
     <meta name="apple-mobile-web-app-title" content="CoopVault" />
-    <link rel="preconnect" href="https://fonts.googleapis.com" />
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-    <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+    <script>
+      // Apply a saved theme before first paint to avoid a flash
+      try { var t = localStorage.getItem('coopvault.theme'); if (t === 'light' || t === 'dark') document.documentElement.dataset.theme = t } catch (e) {}
+    </script>
   </head>
   <body>
     <div id="app"></div>

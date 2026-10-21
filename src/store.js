@@ -2,6 +2,11 @@ import { reactive, computed } from 'vue'
 import * as api from './api'
 
 const COOP_KEY = 'coopvault.cooperative'
+const THEME_KEY = 'coopvault.theme'
+const SEEN_KEY = 'coopvault.seenAnnouncements'
+
+function safeGet(k) { try { return localStorage.getItem(k) } catch { return null } }
+function safeSet(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k) } catch {} }
 
 export const state = reactive({
   token: api.getToken(), // mirrored here so login state is reactive (localStorage is not)
@@ -9,12 +14,11 @@ export const state = reactive({
   memberships: [],
   currentId: safeGet(COOP_KEY),
   paystack: { enabled: false },
+  dashboards: {}, // cooperative -> last dashboard payload, so screens render instantly
   loaded: false,
   toast: null,
+  theme: safeGet(THEME_KEY) || 'system',
 })
-
-function safeGet(k) { try { return localStorage.getItem(k) } catch { return null } }
-function safeSet(k, v) { try { v ? localStorage.setItem(k, v) : localStorage.removeItem(k) } catch {} }
 
 export const isLoggedIn = computed(() => !!state.token && !!state.user)
 
@@ -24,6 +28,7 @@ export const current = computed(() => {
 })
 export const currency = computed(() => current.value?.currency || 'NGN')
 export const isAdmin = computed(() => current.value?.status === 'Active' && ['Admin', 'Treasurer'].includes(current.value?.role))
+export const dashboard = computed(() => (current.value ? state.dashboards[current.value.cooperative] : null))
 
 export function selectCooperative(id) {
   state.currentId = id
@@ -55,6 +60,15 @@ export async function refreshMemberships() {
   state.memberships = me.cooperatives
 }
 
+/** Fetch (and cache) the dashboard for the current cooperative. */
+export async function loadDashboard() {
+  const coop = current.value?.cooperative
+  if (!coop) return null
+  const data = await api.get('coop.get_dashboard', { cooperative: coop })
+  state.dashboards[coop] = data
+  return data
+}
+
 export function startSession(payload) {
   api.setToken(payload.token)
   state.token = payload.token
@@ -66,7 +80,26 @@ export function logout() {
   state.token = null
   state.user = null
   state.memberships = []
+  state.dashboards = {}
   selectCooperative(null)
+}
+
+export function setTheme(theme) {
+  state.theme = theme
+  safeSet(THEME_KEY, theme === 'system' ? null : theme)
+  if (theme === 'system') delete document.documentElement.dataset.theme
+  else document.documentElement.dataset.theme = theme
+}
+
+export function lastSeenAnnouncement(coop) {
+  try { return JSON.parse(safeGet(SEEN_KEY) || '{}')[coop] || '' } catch { return '' }
+}
+export function markAnnouncementsSeen(coop, creation) {
+  try {
+    const seen = JSON.parse(safeGet(SEEN_KEY) || '{}')
+    seen[coop] = creation
+    safeSet(SEEN_KEY, JSON.stringify(seen))
+  } catch {}
 }
 
 let toastTimer
@@ -74,4 +107,26 @@ export function toast(message, kind = 'success') {
   state.toast = { message, kind }
   clearTimeout(toastTimer)
   toastTimer = setTimeout(() => (state.toast = null), 3800)
+}
+
+export async function copyText(text, message = 'Copied') {
+  try {
+    await navigator.clipboard.writeText(text)
+    toast(message)
+  } catch {
+    toast('Copy failed. Press and hold to copy instead.', 'error')
+  }
+}
+
+/** Native share sheet where available (great for WhatsApp), clipboard otherwise. */
+export async function shareText(text, title = 'CoopVault') {
+  if (navigator.share) {
+    try {
+      await navigator.share({ title, text })
+      return
+    } catch (e) {
+      if (e?.name === 'AbortError') return
+    }
+  }
+  await copyText(text, 'Copied. Paste it in your WhatsApp group.')
 }

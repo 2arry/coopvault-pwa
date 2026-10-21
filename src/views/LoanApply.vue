@@ -2,11 +2,13 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as api from '../api'
-import { current, currency, toast } from '../store'
+import { state, current, currency, toast, loadDashboard } from '../store'
 import { money } from '../format'
 import PageHeader from '../components/PageHeader.vue'
+import AmountField from '../components/AmountField.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import Loader from '../components/Loader.vue'
+import Icon from '../components/Icon.vue'
 
 const router = useRouter()
 const info = ref(null)
@@ -24,10 +26,21 @@ onMounted(async () => {
 })
 
 const value = computed(() => Number(amount.value) || 0)
-const interest = computed(() => value.value * (info.value?.interest_rate || 0) / 100)
+const limit = computed(() => info.value?.borrow_limit || 0)
+const maxNow = computed(() => Math.max(0, Math.min(limit.value, info.value?.pool_balance || 0)))
+const interest = computed(() => (value.value * (info.value?.interest_rate || 0)) / 100)
 const total = computed(() => value.value + interest.value)
-const overLimit = computed(() => info.value && value.value > info.value.borrow_limit + 0.005)
+const monthly = computed(() => total.value / (tenure.value || 1))
+const overLimit = computed(() => info.value && value.value > limit.value + 0.005)
 const overPool = computed(() => info.value && !overLimit.value && value.value > info.value.pool_balance + 0.005)
+const chips = computed(() => {
+  const m = maxNow.value
+  if (m <= 0) return []
+  const round = (x) => Math.max(1000, Math.floor(x / 1000) * 1000)
+  const set = [...new Set([round(m * 0.25), round(m * 0.5), Math.floor(m)])].filter((x) => x <= m)
+  return set.map((x) => ({ label: x === Math.floor(m) ? `Max · ${money(x, currency.value)}` : money(x, currency.value), value: x }))
+})
+const needsPayout = computed(() => !state.user?.payout_account?.payout_account_number)
 
 async function submit() {
   busy.value = true
@@ -36,7 +49,8 @@ async function submit() {
     const loan = await api.post('finance.apply_loan', {
       cooperative: current.value.cooperative, amount: value.value, tenure_months: tenure.value, purpose: purpose.value,
     })
-    toast('Loan request sent for approval')
+    toast('Loan request sent to the treasurer')
+    loadDashboard().catch(() => {})
     router.replace(`/loans/${loan.name}`)
   } catch (e) {
     error.value = e.message
@@ -48,49 +62,62 @@ async function submit() {
 
 <template>
   <div>
-    <PageHeader title="Request a loan" back="/loans" />
-    <div class="px-5 pb-10 pt-2">
+    <PageHeader title="Borrow" back="/loans" />
+    <div class="px-5 pb-12 pt-1">
       <Loader v-if="!info && !error" />
       <ErrorBox v-if="!info" :message="error" />
-      <form v-else class="space-y-5" @submit.prevent="submit">
-        <div class="card p-4">
+      <form v-else class="space-y-6" @submit.prevent="submit">
+        <div class="card p-5">
           <p class="text-sm text-ink-soft">You can borrow up to</p>
-          <p class="num text-3xl font-extrabold text-brand-800">{{ money(info.borrow_limit, currency) }}</p>
-          <div class="mt-3 space-y-1 text-xs text-ink-soft">
-            <p>Based on {{ money(info.total_contributed, currency) }} contributed<span v-if="info.multiplier !== 1"> × {{ info.multiplier }}</span><span v-if="info.exposure > 0">, less {{ money(info.exposure, currency) }} you already owe or requested</span>.</p>
-            <p v-if="info.pool_balance < info.borrow_limit">The pool currently has {{ money(info.pool_balance, currency) }} available, so larger loans may wait until more is saved.</p>
+          <p class="money text-[36px] leading-tight text-brand-text">{{ money(limit, currency) }}</p>
+          <div class="mt-3 space-y-1.5 border-t border-line/[0.07] pt-3 text-sm">
+            <div class="flex justify-between"><span class="text-ink-soft">Your savings{{ info.multiplier !== 1 ? ` × ${info.multiplier}` : '' }}</span><span class="num">{{ money(info.total_contributed * info.multiplier, currency) }}</span></div>
+            <div v-if="info.exposure > 0" class="flex justify-between"><span class="text-ink-soft">Owed or already requested</span><span class="num">− {{ money(info.exposure, currency) }}</span></div>
           </div>
+          <p v-if="info.pool_balance < limit" class="mt-3 flex gap-2 rounded-2xl bg-gold-soft p-3 text-xs text-gold-text">
+            <Icon name="info" :size="16" class="shrink-0" /> The pool has {{ money(info.pool_balance, currency) }} right now, so bigger loans wait until more is saved.
+          </p>
         </div>
 
-        <div>
-          <label class="label" for="amount">Amount ({{ currency }})</label>
-          <input id="amount" v-model="amount" type="number" inputmode="decimal" min="1" step="0.01" class="input num text-2xl font-bold"
-            :class="overLimit ? 'border-red-400 focus:border-red-500 focus:ring-red-100' : ''" required />
-          <input v-if="info.borrow_limit > 0" :value="value" type="range" @input="amount = $event.target.value" min="0" :max="Math.floor(info.borrow_limit)" step="500" class="mt-3 w-full accent-brand-700" aria-label="Amount slider" />
-          <p v-if="overLimit" class="hint text-red-700">That's more than you can borrow. You can't owe more than you've contributed.</p>
-          <p v-else-if="overPool" class="hint text-amber-700">The pool doesn't have this much right now. An admin can approve it once funds are available.</p>
-        </div>
+        <template v-if="limit > 0">
+          <AmountField v-model="amount" :currency="currency" :chips="chips" :invalid="overLimit" label="How much do you need?" />
+          <p v-if="overLimit" class="-mt-4 text-sm text-neg">That’s more than your limit. You can’t borrow more than you’ve saved.</p>
+          <p v-else-if="overPool" class="-mt-4 text-sm text-warn">The pool doesn’t have this much yet. You can still ask; the treasurer can approve it once there’s enough.</p>
 
-        <div>
-          <label class="label" for="tenure">Pay back within</label>
-          <select id="tenure" v-model.number="tenure" class="input">
-            <option v-for="m in info.max_loan_tenure_months" :key="m" :value="m">{{ m }} month{{ m > 1 ? 's' : '' }}</option>
-          </select>
-        </div>
+          <div>
+            <span class="label">Pay back over</span>
+            <div class="no-scrollbar -mx-1 flex gap-2 overflow-x-auto px-1">
+              <button v-for="m in info.max_loan_tenure_months" :key="m" type="button"
+                class="shrink-0 rounded-2xl border px-4 py-2.5 text-sm font-semibold transition"
+                :class="tenure === m ? 'border-brand-text/40 bg-brand-soft text-brand-text' : 'border-line/12 bg-card text-ink-soft'"
+                @click="tenure = m">{{ m }} month{{ m > 1 ? 's' : '' }}</button>
+            </div>
+          </div>
 
-        <div>
-          <label class="label" for="purpose">What is it for? <span class="font-normal text-ink-faint">(optional)</span></label>
-          <textarea id="purpose" v-model="purpose" rows="2" class="input" placeholder="e.g. School fees" />
-        </div>
+          <div>
+            <label class="label" for="purpose">What’s it for? <span class="font-normal text-ink-faint">(optional, helps the treasurer)</span></label>
+            <input id="purpose" v-model="purpose" class="input" placeholder="e.g. School fees, shop stock" />
+          </div>
 
-        <div v-if="value > 0" class="card divide-y divide-black/5 px-4 text-sm">
-          <div class="flex justify-between py-3"><span class="text-ink-soft">You receive</span><span class="num font-semibold">{{ money(value, currency) }}</span></div>
-          <div class="flex justify-between py-3"><span class="text-ink-soft">Interest ({{ info.interest_rate }}% flat)</span><span class="num font-semibold">{{ money(interest, currency) }}</span></div>
-          <div class="flex justify-between py-3"><span class="font-semibold">Total to pay back</span><span class="num font-extrabold">{{ money(total, currency) }}</span></div>
-        </div>
+          <div v-if="value > 0" class="card-flat divide-soft px-4 text-sm">
+            <div class="flex justify-between py-3"><span class="text-ink-soft">You receive</span><span class="num font-semibold">{{ money(value, currency) }}</span></div>
+            <div class="flex justify-between py-3"><span class="text-ink-soft">Interest ({{ info.interest_rate }}% flat)</span><span class="num">{{ money(interest, currency) }}</span></div>
+            <div class="flex justify-between py-3"><span class="text-ink-soft">Total to pay back</span><span class="num font-semibold">{{ money(total, currency) }}</span></div>
+            <div class="flex items-baseline justify-between py-3"><span class="font-semibold">Each month</span><span class="money text-xl">{{ money(monthly, currency) }} <span class="font-sans text-xs text-ink-soft">× {{ tenure }}</span></span></div>
+          </div>
 
-        <ErrorBox :message="error" />
-        <button class="btn-primary w-full" :disabled="busy || !value || overLimit">{{ busy ? 'Sending…' : 'Send loan request' }}</button>
+          <RouterLink v-if="needsPayout" to="/profile/payout" class="flex items-center gap-3 rounded-3xl bg-info-soft p-4 text-sm text-info">
+            <Icon name="bank" /><span class="flex-1"><b>Add the account to send your loan to.</b> It makes approval faster.</span><Icon name="chevron" :size="18" />
+          </RouterLink>
+
+          <ErrorBox :message="error" />
+          <button class="btn-primary btn-lg w-full" :disabled="busy || !value || overLimit">{{ busy ? 'Sending…' : 'Send loan request' }}</button>
+        </template>
+        <div v-else class="card p-6 text-center">
+          <p class="font-semibold">Nothing to borrow just yet</p>
+          <p class="mt-1 text-sm text-ink-soft">Your limit grows with every confirmed contribution{{ info.loan_outstanding > 0 ? ' and every repayment' : '' }}.</p>
+          <RouterLink to="/save" class="btn-primary btn-sm mt-4">Save now</RouterLink>
+        </div>
       </form>
     </div>
   </div>

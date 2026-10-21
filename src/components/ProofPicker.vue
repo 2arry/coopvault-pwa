@@ -19,13 +19,13 @@ function pick(e) {
 
 <template>
   <div>
-    <label class="label">Proof of payment <span class="font-normal text-ink-faint">(optional)</span></label>
-    <label class="flex cursor-pointer items-center gap-3 rounded-xl border border-dashed border-black/15 bg-white px-3.5 py-3 text-sm hover:border-brand-600">
-      <Icon :name="model ? 'file' : 'upload'" class="text-brand-700" />
-      <span class="flex-1 truncate" :class="model ? 'text-ink' : 'text-ink-faint'">{{ model ? model.name : 'Attach receipt or screenshot' }}</span>
+    <span class="label">Receipt or screenshot <span class="font-normal text-ink-faint">(helps the treasurer confirm faster)</span></span>
+    <label class="flex cursor-pointer items-center gap-3 rounded-2xl border border-dashed border-line/20 bg-card px-4 py-3.5 text-sm transition hover:border-brand-text">
+      <span class="grid h-9 w-9 place-items-center rounded-xl bg-brand-soft text-brand-text"><Icon :name="model ? 'file' : 'upload'" :size="18" /></span>
+      <span class="flex-1 truncate" :class="model ? 'text-ink' : 'text-ink-faint'">{{ model ? model.name : 'Attach a photo or PDF' }}</span>
       <button v-if="model" type="button" class="text-ink-faint" aria-label="Remove file" @click.prevent="model = null"><Icon name="x" :size="18" /></button>
       <input type="file" accept="image/*,application/pdf" class="sr-only" @change="pick" />
     </label>
-    <p v-if="error" class="hint text-red-700">{{ error }}</p>
+    <p v-if="error" class="hint text-neg">{{ error }}</p>
   </div>
 </template>
