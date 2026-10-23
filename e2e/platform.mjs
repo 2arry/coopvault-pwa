@@ -2,7 +2,7 @@
 import fs from 'node:fs'
 import { STAGE as env, suite, page, go, launch, login } from './lib.mjs'
 
-const state = JSON.parse(fs.readFileSync('/home/ubuntu/start-paymnet/backend/apps/coopvault/dev/tests/.state/demo_stage.json', 'utf8'))
+const state = JSON.parse(fs.readFileSync('/home/ubuntu/start-payment/backend/apps/coopvault/dev/tests/.state/demo_stage.json', 'utf8'))
 const t = suite(process.argv[2] || 'shots/platform')
 const b = await launch()
 const H = { 'Content-Type': 'application/json', Accept: 'application/json', Origin: env.app }

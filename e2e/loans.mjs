@@ -2,7 +2,7 @@
 import fs from 'node:fs'
 import { STAGE as env, suite, page, go, launch } from './lib.mjs'
 
-const state = JSON.parse(fs.readFileSync('/home/ubuntu/start-paymnet/backend/apps/coopvault/dev/tests/.state/demo_stage.json', 'utf8'))
+const state = JSON.parse(fs.readFileSync('/home/ubuntu/start-payment/backend/apps/coopvault/dev/tests/.state/demo_stage.json', 'utf8'))
 const t = suite(process.argv[2] || 'shots/loans')
 const b = await launch()
 const as = (key, opts) => page(b, env, t, key, { cooperative: state.coop, ...opts })
