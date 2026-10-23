@@ -3,7 +3,8 @@
 import { ref, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import * as api from '../api'
-import { receiptPath } from '../payments'
+import { receiptPath, SUBSCRIPTION } from '../payments'
+import { toast } from '../store'
 import Icon from '../components/Icon.vue'
 
 const route = useRoute()
@@ -15,9 +16,18 @@ onMounted(async () => {
   const reference = route.query.reference || route.query.trxref
   if (!reference) return (error.value = 'This payment link is missing its reference.')
   try {
-    if (route.query.cancelled) await api.post('payments.mark_abandoned', { reference }).catch(() => {})
-    result.value = await api.post('payments.verify', { reference })
-    if (result.value.status === 'Success') router.replace(receiptPath(result.value))
+    // Cooperative360 subscriptions (SUB-…) are paid to the platform, not into the group
+    const sub = String(reference).startsWith('SUB-')
+    const ep = sub ? SUBSCRIPTION : { verify: 'payments.verify', abandon: 'payments.mark_abandoned' }
+    if (route.query.cancelled) await api.post(ep.abandon, { reference }).catch(() => {})
+    result.value = await api.post(ep.verify, { reference })
+    if (result.value.status === 'Success') {
+      if (sub) {
+        toast('Thank you. Your Cooperative360 subscription is paid.')
+        return router.replace('/admin/plan')
+      }
+      router.replace(receiptPath(result.value))
+    }
   } catch (e) { error.value = e.message }
 })
 </script>

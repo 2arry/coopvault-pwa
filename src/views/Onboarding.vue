@@ -18,7 +18,7 @@ const busy = ref(false)
 const error = ref('')
 const form = reactive({
   cooperative_name: '', description: '', contribution_amount: '', contribution_frequency: 'Monthly',
-  start_date: '', interest_rate: 5, max_loan_tenure_months: 6,
+  start_date: '', interest_rate: 5, max_loan_tenure_months: 6, location: '', registration_number: '', expected_members: '',
 })
 const pending = computed(() => state.memberships.filter((m) => m.status === 'Pending'))
 const hasActive = computed(() => state.memberships.some((m) => m.status === 'Active'))
@@ -53,8 +53,13 @@ async function create() {
     const res = await api.post('coop.create_cooperative', { ...form, loan_multiplier: 1 })
     await refreshMemberships()
     selectCooperative(res.name)
-    toast('Your cooperative is ready. Invite your members next.')
-    router.replace('/admin?tab=settings')
+    if (res.status === 'Pending review') {
+      toast('Sent to Cooperative360 for review. Set up your rules while you wait.')
+      router.replace('/home')
+    } else {
+      toast('Your cooperative is ready. Invite your members next.')
+      router.replace('/admin?tab=settings')
+    }
   } catch (e) {
     error.value = e.message
   } finally {
@@ -109,6 +114,18 @@ async function create() {
         <div>
           <label class="label" for="cname">Cooperative name</label>
           <input id="cname" v-model="form.cooperative_name" class="input" required placeholder="e.g. Unity Savings Circle" />
+        </div>
+        <div class="card-flat space-y-4 p-4">
+          <p class="text-sm font-semibold">About the group</p>
+          <div class="grid grid-cols-2 gap-3">
+            <div><label class="label text-xs" for="loc">Town and state</label><input id="loc" v-model="form.location" class="input" required placeholder="e.g. Ikeja, Lagos" /></div>
+            <div><label class="label text-xs" for="exp">Members (about)</label><input id="exp" v-model="form.expected_members" type="number" min="2" inputmode="numeric" class="input" placeholder="25" /></div>
+          </div>
+          <div>
+            <label class="label text-xs" for="reg">Registration number <span class="font-normal text-ink-faint">(if registered)</span></label>
+            <input id="reg" v-model="form.registration_number" class="input" placeholder="From the Director of Cooperatives" />
+          </div>
+          <p class="hint">Cooperative360 checks each new group before members can join, usually within a day. Just type it in: there’s nothing to upload.</p>
         </div>
         <div class="card-flat space-y-4 p-4">
           <p class="text-sm font-semibold">How members save</p>

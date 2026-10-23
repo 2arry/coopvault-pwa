@@ -1,5 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
-import { state, loadSession, isLoggedIn, current, isAdmin, logout } from './store'
+import { state, loadSession, isLoggedIn, current, isAdmin, isPlatform, logout } from './store'
 import { setUnauthorizedHandler } from './api'
 
 const JOIN_KEY = 'coopvault.joinCode'
@@ -51,6 +51,9 @@ const routes = [
   { path: '/admin/books/share-out', component: view('admin/books/ShareOut'), meta: { admin: true } },
   { path: '/admin/books/share-out/:name', component: view('admin/books/ShareOut'), props: true, meta: { admin: true } },
   { path: '/share-out/:name', component: view('ShareOutMine'), props: true },
+  { path: '/admin/plan', component: view('admin/Plan'), meta: { admin: true } },
+  { path: '/platform', component: view('platform/Console'), meta: { noCoop: true, platform: true } },
+  { path: '/platform/groups/:name', component: view('platform/Group'), props: true, meta: { noCoop: true, platform: true } },
   { path: '/:pathMatch(.*)*', redirect: '/' },
 ]
 
@@ -85,7 +88,8 @@ router.beforeEach(async (to) => {
     if (to.meta.inviteFriendly && pendingJoinCode()) return '/signup'
     return { path: '/login', query: { next: to.fullPath } }
   }
-  if (!to.meta.noCoop && !current.value) return '/welcome'
+  if (to.meta.platform && !isPlatform.value) return '/home'
+  if (!to.meta.noCoop && !current.value) return isPlatform.value ? '/platform' : '/welcome'
   if (to.meta.admin && !isAdmin.value) return '/home'
   return true
 })

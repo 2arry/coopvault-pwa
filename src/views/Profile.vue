@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import * as api from '../api'
-import { state, current, dashboard, loadDashboard, logout, signOut as endSession, toast, setTheme, copyText } from '../store'
+import { state, current, isPlatform, dashboard, loadDashboard, logout, signOut as endSession, toast, setTheme, copyText } from '../store'
 import { pushSupported, needsInstallForPush, enablePush, disablePush, deviceStatus, setDiscreet, forgetDevice } from '../push'
 import { initials } from '../format'
 import PageHeader from '../components/PageHeader.vue'
@@ -172,6 +172,12 @@ async function signOut() {
           </div>
         </div>
       </section>
+
+      <RouterLink v-if="isPlatform" to="/platform" class="card flex items-center gap-3.5 border-brand-text/30 p-4">
+        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-navy-800 text-white"><Icon name="shield" :size="18" /></span>
+        <span class="flex-1"><span class="block text-[15px] font-semibold">Platform console</span><span class="block text-xs text-ink-soft">Review groups, plans and subscriptions</span></span>
+        <Icon name="chevron" :size="18" class="text-ink-faint" />
+      </RouterLink>
 
       <!-- The group -->
       <section v-if="current?.status === 'Active'">

@@ -8,12 +8,16 @@ function loadPopup() {
   return popupPromise
 }
 
+// Group payments by default; a Cooperative360 subscription uses its own endpoints
+const GROUP = { initialize: 'payments.initialize', verify: 'payments.verify', abandon: 'payments.mark_abandoned' }
+export const SUBSCRIPTION = { initialize: 'subscription.pay', verify: 'subscription.verify', abandon: 'subscription.mark_abandoned' }
+
 /**
  * Opens checkout and resolves with the verified transaction summary, or null if the member
  * closed the popup. Falls back to Paystack's hosted page if the popup can't load.
  */
-export async function payWithPaystack(payload, { onOpen } = {}) {
-  const init = await api.post('payments.initialize', payload)
+export async function payWithPaystack(payload, { onOpen, endpoints = GROUP } = {}) {
+  const init = await api.post(endpoints.initialize, payload)
   let popup
   try {
     popup = await loadPopup()
@@ -26,13 +30,13 @@ export async function payWithPaystack(payload, { onOpen } = {}) {
       onLoad: () => onOpen?.(),
       onSuccess: async () => {
         try {
-          resolve(await api.post('payments.verify', { reference: init.reference }))
+          resolve(await api.post(endpoints.verify, { reference: init.reference }))
         } catch (e) {
           reject(e)
         }
       },
       onCancel: () => {
-        api.post('payments.mark_abandoned', { reference: init.reference }).catch(() => {})
+        api.post(endpoints.abandon, { reference: init.reference }).catch(() => {})
         resolve(null)
       },
       onError: () => {

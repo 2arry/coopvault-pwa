@@ -34,6 +34,8 @@ export const ROLES = ['Member', 'Treasurer', 'Accountant', 'Loan Officer', 'Secr
 export const isAdmin = computed(() => current.value?.status === 'Active' && !!current.value?.role && current.value.role !== 'Member')
 export const isOwner = computed(() => current.value?.status === 'Active' && current.value?.role === 'Admin')
 export const can = (capability) => current.value?.status === 'Active' && (current.value?.capabilities || []).includes(capability)
+// Cooperative360's own team: the platform console (no access to any group's money)
+export const isPlatform = computed(() => !!state.user?.is_platform)
 export const isDemo = computed(() => !!state.paystack?.test_mode)
 export const dashboard = computed(() => (current.value ? state.dashboards[current.value.cooperative] : null))
 

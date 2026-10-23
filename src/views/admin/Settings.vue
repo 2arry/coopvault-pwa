@@ -39,10 +39,10 @@ async function save() {
   error.value = ''
   try {
     const { cooperative_name, description, loan_multiplier, interest_rate, max_loan_tenure_months, accept_online_payments, fee_bearer,
-      contribution_amount, contribution_frequency, start_date, auto_allocate, extra_savings_product } = coop.value
+      contribution_amount, contribution_frequency, start_date, auto_allocate, extra_savings_product, location, registration_number } = coop.value
     const res = await api.post('coop.update_cooperative', { cooperative: current.value.cooperative, cooperative_name, description, loan_multiplier,
       interest_rate, max_loan_tenure_months, accept_online_payments, fee_bearer, contribution_amount, contribution_frequency, start_date,
-      auto_allocate, extra_savings_product: extra_savings_product || '' })
+      auto_allocate, extra_savings_product: extra_savings_product || '', location, registration_number })
     await refreshMemberships()
     apply(await loadDashboard())
     toast(res.plan_change ? `Saved. The new amount starts ${date(res.plan_change.effective_from)} and everyone’s been told.` : 'Settings saved')
@@ -85,6 +85,7 @@ function shareInvite() {
         <p class="relative text-sm text-navy-100/80">Invite members</p>
         <p class="relative mt-1 truncate font-semibold text-glow-300">{{ inviteLink.replace(/^https?:\/\//, '') }}</p>
         <p class="relative mt-1 text-xs text-navy-100/70">Code <b class="tracking-[0.2em] text-white">{{ coop.join_code }}</b>. New members ask to join, and you approve them in Review.</p>
+        <p v-if="coop.status === 'Pending review'" class="relative mt-2 rounded-xl bg-white/10 px-3 py-2 text-xs text-glow-300">Members can use it once Cooperative360 approves the group.</p>
         <div class="relative mt-4 flex gap-2">
           <button type="button" class="btn-light btn-sm flex-1" @click="shareInvite"><Icon name="share" :size="16" /> Share invite</button>
           <button type="button" class="btn btn-sm bg-white/10 text-white hover:bg-white/15" aria-label="Copy link" @click="copyText(inviteLink, 'Invite link copied')"><Icon name="copy" :size="16" /></button>
@@ -92,10 +93,20 @@ function shareInvite() {
         </div>
       </section>
 
+      <RouterLink to="/admin/plan" class="card flex items-center gap-3.5 p-4">
+        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-brand-soft text-brand-text"><Icon name="card" :size="18" /></span>
+        <span class="flex-1"><b class="block text-[15px]">Plan and billing</b><span class="text-xs text-ink-soft">Your Cooperative360 plan, limits and payments</span></span>
+        <Icon name="chevron" :size="18" class="text-ink-faint" />
+      </RouterLink>
+
       <section class="space-y-4">
         <h2 class="section-title">About</h2>
         <div><label class="label" for="sname">Name</label><input id="sname" v-model="coop.cooperative_name" class="input" required /></div>
         <div><label class="label" for="sdesc">Description</label><textarea id="sdesc" v-model="coop.description" rows="2" class="input" placeholder="What the group is for, when you meet…" /></div>
+        <div class="grid grid-cols-2 gap-3">
+          <div><label class="label" for="sloc">Town and state</label><input id="sloc" v-model="coop.location" class="input" /></div>
+          <div><label class="label" for="sreg">Registration no.</label><input id="sreg" v-model="coop.registration_number" class="input" placeholder="If registered" /></div>
+        </div>
       </section>
 
       <section class="space-y-4">

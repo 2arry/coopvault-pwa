@@ -31,6 +31,16 @@ const payPath = computed(() => (due.value.length > 1 ? '/pay' : { path: '/save',
 // Savings split by product, shown when there's more than the regular contributions
 const productBalances = computed(() => (data.value?.balances?.products || []).filter((p) => p.balance > 0.005))
 const meeting = computed(() => data.value?.next_meeting)
+// The group as Cooperative360 sees it: under review, paused, or its subscription running out
+const groupStatus = computed(() => data.value?.cooperative?.status)
+const plan = computed(() => {
+  const s = data.value?.subscription
+  if (!s) return null
+  if (s.state === 'lapsed') return { tone: 'neg', text: `Cooperative360 subscription ended ${date(s.ends_on)}. New loans and members are paused until it’s renewed.` }
+  if (s.state === 'grace') return { tone: 'warn', text: `Cooperative360 subscription ended ${date(s.ends_on)}. Renew within ${s.days_left} day${s.days_left === 1 ? '' : 's'} so new loans and members don’t pause.` }
+  if (['trial', 'active'].includes(s.state) && s.days_left <= 7) return { tone: 'info', text: `Your Cooperative360 ${s.state === 'trial' ? 'free trial' : 'subscription'} ends ${dueIn(s.ends_on)}.` }
+  return null
+})
 const meetingWhen = (m) => date(m.starts_at, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
 const unread = computed(() => data.value?.unread_notifications || 0)
 const holdUntil = computed(() => {
@@ -115,6 +125,29 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
     <Loader v-else-if="!data" />
 
     <div v-else class="space-y-4 px-5 pt-5">
+      <!-- Cooperative360's view of the group -->
+      <section v-if="groupStatus === 'Pending review'" class="card border-brand-text/30 p-5">
+        <div class="flex items-center gap-3">
+          <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand-text"><Icon name="clock" /></span>
+          <div><p class="font-semibold">Cooperative360 is checking {{ data.cooperative.cooperative_name }}</p><p class="text-sm text-ink-soft">Usually within a day. You’ll get a notification.</p></div>
+        </div>
+        <p class="mt-3 text-sm text-ink-soft">Meanwhile, set up contributions, loan products and who approves what. Members can join and pay once the group is approved.</p>
+        <RouterLink v-if="isAdmin" to="/admin?tab=settings" class="btn-secondary btn-sm mt-3 w-full">Set up the group</RouterLink>
+        <p v-if="data.support_contact" class="mt-3 text-xs text-ink-faint">Questions? {{ data.support_contact }}</p>
+      </section>
+      <section v-else-if="['Suspended', 'Declined'].includes(groupStatus)" class="rounded-3xl bg-neg-soft p-4 text-neg">
+        <p class="flex items-center gap-2 font-semibold"><Icon name="shield" :size="18" /> {{ groupStatus === 'Suspended' ? 'Paused by Cooperative360' : 'Not approved by Cooperative360' }}</p>
+        <p v-if="data.cooperative.status_reason" class="mt-1 text-sm">{{ data.cooperative.status_reason }}</p>
+        <p class="mt-2 text-sm">{{ groupStatus === 'Suspended' ? 'Your savings and loans are safe and you can see them all. Nothing can change until the group is open again.' : 'Nobody can join or pay into this group.' }}</p>
+        <p v-if="data.support_contact" class="mt-2 text-xs">Contact Cooperative360: {{ data.support_contact }}</p>
+      </section>
+      <RouterLink v-if="plan && isAdmin" to="/admin/plan" class="flex items-center gap-3 rounded-3xl p-4"
+        :class="plan.tone === 'neg' ? 'bg-neg-soft text-neg' : plan.tone === 'warn' ? 'bg-warn-soft text-warn' : 'bg-info-soft text-info'">
+        <Icon name="card" />
+        <span class="flex-1 text-sm font-semibold">{{ plan.text }}</span>
+        <Icon name="chevron" :size="18" />
+      </RouterLink>
+
       <!-- Savings hero -->
       <section class="relative overflow-hidden rounded-4xl bg-gradient-to-br from-navy-800 via-navy-800 to-navy-700 p-5 pb-4 text-white shadow-lift">
         <svg class="pointer-events-none absolute -right-16 -top-20 h-64 w-64 text-glow-400/[0.13]" viewBox="0 0 100 100" aria-hidden="true">
@@ -149,8 +182,8 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
         </div>
       </section>
 
-      <!-- Actions -->
-      <section class="grid grid-cols-4 gap-2.5">
+      <!-- Actions (only once Cooperative360 has the group open: under review or paused, nothing can change) -->
+      <section v-if="groupStatus === 'Active'" class="grid grid-cols-4 gap-2.5">
         <RouterLink v-for="a in [
           { to: '/save', label: 'Save', icon: 'arrowDown', tone: 'bg-pos-soft text-pos' },
           { to: '/loans/new', label: 'Borrow', icon: 'loans', tone: 'bg-brand-soft text-brand-text' },
@@ -342,7 +375,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
         <div v-else class="card mt-3 p-6 text-center">
           <p class="font-semibold">Nothing here yet</p>
           <p class="mt-1 text-sm text-ink-soft">Your first contribution will show up here.</p>
-          <RouterLink to="/save" class="btn-primary btn-sm mt-4">Make your first contribution</RouterLink>
+          <RouterLink v-if="groupStatus === 'Active'" to="/save" class="btn-primary btn-sm mt-4">Make your first contribution</RouterLink>
         </div>
       </section>
     </div>
