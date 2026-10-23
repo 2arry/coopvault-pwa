@@ -12,8 +12,9 @@ import Icon from '../components/Icon.vue'
 const loans = ref(null)
 const error = ref('')
 const canBorrow = computed(() => Math.max(0, Math.min(dashboard.value?.balances?.borrow_limit || 0, dashboard.value?.pool?.pool_balance || 0)))
-const open = computed(() => (loans.value || []).filter((l) => ['Pending', 'Active'].includes(l.status)))
-const closed = computed(() => (loans.value || []).filter((l) => !['Pending', 'Active'].includes(l.status)))
+const OPEN = ['Pending', 'Approved', 'Sent', 'Active']
+const open = computed(() => (loans.value || []).filter((l) => OPEN.includes(l.status)))
+const closed = computed(() => (loans.value || []).filter((l) => !OPEN.includes(l.status)))
 const scheduleOf = (name) => dashboard.value?.active_loans?.find((l) => l.name === name)?.schedule
 
 onMounted(async () => {

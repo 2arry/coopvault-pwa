@@ -18,10 +18,10 @@ const cap = (s) => s.charAt(0).toUpperCase() + s.slice(1)
 
 const canBorrow = computed(() => Math.max(0, Math.min(data.value?.balances?.borrow_limit || 0, data.value?.pool?.pool_balance || 0)))
 const activeLoans = computed(() => (data.value?.active_loans || []).filter((l) => l.status === 'Active'))
-const pendingLoans = computed(() => (data.value?.active_loans || []).filter((l) => l.status === 'Pending'))
+const pendingLoans = computed(() => (data.value?.active_loans || []).filter((l) => ['Pending', 'Approved'].includes(l.status)))
 const sentLoans = computed(() => (data.value?.active_loans || []).filter((l) => l.status === 'Sent'))
 const sentWithdrawals = computed(() => (data.value?.withdrawals || []).filter((w) => w.status === 'Sent'))
-const pendingWithdrawals = computed(() => (data.value?.withdrawals || []).filter((w) => w.status === 'Pending'))
+const pendingWithdrawals = computed(() => (data.value?.withdrawals || []).filter((w) => ['Pending', 'Approved'].includes(w.status)))
 const openingBalances = computed(() => data.value?.opening_balances || [])
 const unread = computed(() => data.value?.unread_notifications || 0)
 const holdUntil = computed(() => {
@@ -181,7 +181,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
       </RouterLink>
       <RouterLink v-for="w in pendingWithdrawals" :key="w.name" :to="`/withdrawals/${w.name}`" class="card flex items-center gap-3 p-4">
         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-warn-soft text-warn"><Icon name="clock" :size="18" /></span>
-        <div class="flex-1"><p class="text-sm font-semibold">Withdrawal of {{ money(w.amount, currency) }}</p><p class="text-xs text-ink-soft">Waiting for the treasurer to send it</p></div>
+        <div class="flex-1"><p class="text-sm font-semibold">Withdrawal of {{ money(w.amount, currency) }}</p><p class="text-xs text-ink-soft">{{ w.status === 'Approved' ? 'Approved. The treasurer will send it soon.' : 'Waiting for approval' }}</p></div>
         <Icon name="chevron" :size="18" class="text-ink-faint" />
       </RouterLink>
 
@@ -227,7 +227,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-warn-soft text-warn"><Icon name="clock" :size="18" /></span>
         <div class="flex-1">
           <p class="text-sm font-semibold">Loan request for {{ money(l.principal, currency) }}</p>
-          <p class="text-xs text-ink-soft">Waiting for the treasurer to approve</p>
+          <p class="text-xs text-ink-soft">{{ l.status === 'Approved' ? 'Approved. The treasurer will send it soon.' : 'Waiting for approval' }}</p>
         </div>
         <Icon name="chevron" :size="18" class="text-ink-faint" />
       </RouterLink>

@@ -9,6 +9,7 @@ import Loader from '../components/Loader.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import Sheet from '../components/Sheet.vue'
 import TransferConfirm from '../components/TransferConfirm.vue'
+import ApprovalSteps from '../components/ApprovalSteps.vue'
 import Icon from '../components/Icon.vue'
 
 const props = defineProps({ name: String })
@@ -73,8 +74,10 @@ onMounted(load)
             <p class="flex-1 text-sm"><b>{{ money(s.is_overdue ? s.overdue_amount : s.next_amount, currency) }}</b> {{ s.is_overdue ? 'is overdue' : `due ${dueIn(s.next_due_date)}` }}</p>
           </div>
           <RouterLink v-if="loan.status === 'Active'" :to="`/loans/${loan.name}/repay`" class="btn-primary mt-4 w-full">Make a repayment</RouterLink>
-          <template v-if="loan.status === 'Pending'">
-            <p class="mt-3 flex gap-2 text-sm text-ink-soft"><Icon name="clock" :size="18" /> Waiting for the treasurer to approve and send the money.</p>
+          <template v-if="['Pending', 'Approved'].includes(loan.status)">
+            <p class="mt-3 flex gap-2 text-sm text-ink-soft"><Icon name="clock" :size="18" class="shrink-0" />
+              {{ loan.status === 'Approved' ? 'Approved. The treasurer will send it to your bank account and let you know.' : 'Waiting for approval. You’ll get a notification at each step.' }}</p>
+            <ApprovalSteps v-if="loan.approval && loan.status === 'Pending'" :approval="loan.approval" class="mt-4" />
             <button v-if="loan.is_mine" class="btn-ghost mt-3 w-full text-neg" @click="confirmCancel = true">Cancel request</button>
           </template>
         </section>

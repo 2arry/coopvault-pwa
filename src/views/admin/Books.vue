@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onActivated } from 'vue'
 import * as api from '../../api'
-import { current, currency, isOwner, toast } from '../../store'
+import { current, currency, can, toast } from '../../store'
 import { money, date, isoDate } from '../../format'
 import Loader from '../../components/Loader.vue'
 import ErrorBox from '../../components/ErrorBox.vue'
@@ -72,7 +72,7 @@ async function closeBooks() {
           <div><p class="text-xs text-ink-soft">Costs</p><p class="money text-lg">{{ money(s.expenses, currency, { compact: true }) }}</p></div>
           <div><p class="text-xs text-ink-soft">{{ s.surplus < 0 ? 'Deficit' : 'Surplus' }}</p><p class="money text-lg" :class="s.surplus < 0 ? 'text-neg' : 'text-pos'">{{ money(Math.abs(s.surplus), currency, { compact: true }) }}</p></div>
         </div>
-        <RouterLink to="/admin/books/share-out" class="mt-4 flex items-center gap-3 rounded-2xl bg-brand-soft/70 p-3 text-sm">
+        <RouterLink v-if="can('close') || s.share_out_draft" to="/admin/books/share-out" class="mt-4 flex items-center gap-3 rounded-2xl bg-brand-soft/70 p-3 text-sm">
           <Icon name="users" :size="18" class="text-brand-text" />
           <span class="flex-1"><b class="block">{{ s.share_out_draft ? 'Share-out waiting for approval' : 'Year-end share-out' }}</b><span class="text-xs text-ink-soft">Share the surplus with members after the reserve</span></span>
           <Icon name="chevron" :size="18" class="text-ink-faint" />
@@ -106,7 +106,7 @@ async function closeBooks() {
             <span class="flex-1"><span class="block text-[15px] font-semibold">Chart of accounts</span><span class="block text-xs text-ink-soft">Balances and account history</span></span>
             <Icon name="chevron" :size="18" class="text-ink-faint" />
           </RouterLink>
-          <RouterLink to="/admin/books/journal/new" class="flex items-center gap-3.5 p-4">
+          <RouterLink v-if="can('journal')" to="/admin/books/journal/new" class="flex items-center gap-3.5 p-4">
             <span class="grid h-10 w-10 place-items-center rounded-2xl bg-sunk text-ink-soft"><Icon name="plus" :size="18" /></span>
             <span class="flex-1"><span class="block text-[15px] font-semibold">Record an expense or adjustment</span><span class="block text-xs text-ink-soft">Another staff member approves it</span></span>
             <Icon name="chevron" :size="18" class="text-ink-faint" />
@@ -117,7 +117,7 @@ async function closeBooks() {
       <section class="flex items-center gap-3 rounded-3xl bg-sunk p-4 text-sm">
         <Icon name="lock" :size="18" class="shrink-0 text-ink-soft" />
         <p class="flex-1 text-ink-soft">{{ s.books_closed_until ? `Books closed up to ${date(s.books_closed_until)}. Nothing can be posted on or before then.` : 'The books are open. Close them after the year is audited.' }}</p>
-        <button v-if="isOwner" class="text-sm font-semibold link" @click="closing = true; closeDate = yesterday">Close</button>
+        <button v-if="can('close')" class="text-sm font-semibold link" @click="closing = true; closeDate = yesterday">Close</button>
       </section>
     </template>
 

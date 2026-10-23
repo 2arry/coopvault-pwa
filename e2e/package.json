@@ -1,0 +1,9 @@
+{
+  "name": "cooperative360-e2e",
+  "private": true,
+  "type": "module",
+  "description": "Browser checks for the PWA: staging walkthroughs and production smoke tests",
+  "devDependencies": {
+    "playwright": "1.49.1"
+  }
+}

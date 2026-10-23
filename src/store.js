@@ -28,9 +28,12 @@ export const current = computed(() => {
   return list.find((m) => m.cooperative === state.currentId) || list.find((m) => m.status === 'Active') || list[0] || null
 })
 export const currency = computed(() => current.value?.currency || 'NGN')
-// Staff = Admin or Treasurer (money and members); Admin alone runs settings, roles and resets
-export const isAdmin = computed(() => current.value?.status === 'Active' && ['Admin', 'Treasurer'].includes(current.value?.role))
+// Officers (any role but Member) see Manage; what each can do there comes from the server's
+// capabilities for their role (settings, pay_out, record, books, journal, close, loans, …)
+export const ROLES = ['Member', 'Treasurer', 'Accountant', 'Loan Officer', 'Chairman', 'Admin']
+export const isAdmin = computed(() => current.value?.status === 'Active' && !!current.value?.role && current.value.role !== 'Member')
 export const isOwner = computed(() => current.value?.status === 'Active' && current.value?.role === 'Admin')
+export const can = (capability) => current.value?.status === 'Active' && (current.value?.capabilities || []).includes(capability)
 export const isDemo = computed(() => !!state.paystack?.test_mode)
 export const dashboard = computed(() => (current.value ? state.dashboards[current.value.cooperative] : null))
 

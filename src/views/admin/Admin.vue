@@ -1,7 +1,7 @@
 <script setup>
 import { ref, watch, computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { current, dashboard, isOwner } from '../../store'
+import { current, dashboard, can } from '../../store'
 import PageHeader from '../../components/PageHeader.vue'
 import Icon from '../../components/Icon.vue'
 import Overview from './Overview.vue'
@@ -13,15 +13,15 @@ import Books from './Books.vue'
 const route = useRoute()
 const router = useRouter()
 const pending = computed(() => Object.values(dashboard.value?.pending || {}).reduce((a, b) => a + b, 0))
-// Settings (rules, bank account, roles) belong to Admins; the treasurer runs the day-to-day.
+// Every officer sees Overview, Review and Members; the books need the "books" capability.
 const tabs = computed(() => [
   { key: 'overview', label: 'Overview', component: Overview },
   { key: 'reviews', label: 'Review', component: Reviews },
   { key: 'members', label: 'Members', component: Members },
-  { key: 'books', label: 'Books', component: Books },
+  ...(can('books') ? [{ key: 'books', label: 'Books', component: Books }] : []),
 ])
-// Settings sits behind the gear (Admins only), so the four main tabs fit on a phone
-const all = computed(() => [...tabs.value, ...(isOwner.value ? [{ key: 'settings', label: 'Settings', component: Settings }] : [])])
+// Settings (rules, bank account, roles, approvals) sits behind the gear, for Admins only
+const all = computed(() => [...tabs.value, ...(can('settings') ? [{ key: 'settings', label: 'Settings', component: Settings }] : [])])
 const known = (t) => all.value.some((x) => x.key === t)
 const tab = ref(known(route.query.tab) ? route.query.tab : 'overview')
 watch(tab, (t) => router.replace({ query: { tab: t } }))
@@ -32,13 +32,13 @@ watch(all, () => { if (!known(tab.value)) tab.value = 'overview' })
 <template>
   <div>
     <PageHeader title="Manage" :subtitle="current?.cooperative_name">
-      <template v-if="isOwner" #actions>
+      <template v-if="can('settings')" #actions>
         <button class="grid h-11 w-11 place-items-center rounded-2xl border border-line/10 bg-card shadow-soft" :class="tab === 'settings' ? 'text-brand-text' : 'text-ink-soft'"
           aria-label="Settings" @click="tab = 'settings'"><Icon name="settings" :size="20" /></button>
       </template>
     </PageHeader>
     <div class="sticky top-[calc(env(safe-area-inset-top,0px)+60px)] z-20 bg-paper/85 px-5 pb-3 backdrop-blur-xl">
-      <div class="seg grid-cols-4">
+      <div class="seg" :class="tabs.length === 4 ? 'grid-cols-4' : 'grid-cols-3'">
         <button v-for="t in tabs" :key="t.key" class="flex items-center justify-center gap-1" :class="{ on: tab === t.key }" @click="tab = t.key">
           {{ t.label }}
           <span v-if="t.key === 'reviews' && pending" class="grid h-[18px] min-w-[18px] place-items-center rounded-full bg-accent px-1 text-[10px] font-bold text-white">{{ pending }}</span>

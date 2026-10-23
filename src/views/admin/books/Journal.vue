@@ -9,6 +9,7 @@ import ErrorBox from '../../../components/ErrorBox.vue'
 import Sheet from '../../../components/Sheet.vue'
 import StatusPill from '../../../components/StatusPill.vue'
 import Icon from '../../../components/Icon.vue'
+import ApprovalSteps from '../../../components/ApprovalSteps.vue'
 
 const props = defineProps({ name: String })
 const j = ref(null)
@@ -88,10 +89,11 @@ const SOURCE_LINKS = {
           <div v-else-if="j.status === 'Rejected' && j.reversal_reason" class="p-4 text-ink-soft">“{{ j.reversal_reason }}”</div>
         </section>
 
+        <section v-if="j.approval && j.status === 'Draft'" class="card p-5"><ApprovalSteps :approval="j.approval" /></section>
         <div v-if="j.status === 'Draft'" class="grid grid-cols-2 gap-2">
-          <button class="btn-secondary" :disabled="busy" @click="asking = 'reject'; note = ''">Reject</button>
-          <button class="btn-primary" :disabled="busy || !j.can_approve" @click="act('accounts.approve_journal', {}, 'Approved and posted')">Approve</button>
-          <p v-if="!j.can_approve" class="col-span-2 flex gap-2 text-xs text-ink-soft"><Icon name="info" :size="14" class="mt-0.5" /> You prepared this, so another staff member has to approve it.</p>
+          <button class="btn-secondary" :disabled="busy || !j.can_approve" @click="asking = 'reject'; note = ''">Reject</button>
+          <button class="btn-primary" :disabled="busy || !j.can_approve" @click="act('accounts.approve_journal', {}, 'Approved')">Approve</button>
+          <p v-if="!j.can_approve && j.approval?.why_not" class="col-span-2 flex gap-2 text-xs text-ink-soft"><Icon name="info" :size="14" class="mt-0.5 shrink-0" /> {{ j.approval.why_not }}</p>
         </div>
         <button v-if="j.status === 'Posted' && j.voucher_type === 'Manual Journal'" class="btn-ghost w-full text-neg" @click="asking = 'reverse'; note = ''">Reverse this entry</button>
       </template>

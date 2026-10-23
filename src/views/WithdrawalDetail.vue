@@ -6,6 +6,7 @@ import { money, date } from '../format'
 import PageHeader from '../components/PageHeader.vue'
 import StatusPill from '../components/StatusPill.vue'
 import TransferConfirm from '../components/TransferConfirm.vue'
+import ApprovalSteps from '../components/ApprovalSteps.vue'
 import Loader from '../components/Loader.vue'
 import ErrorBox from '../components/ErrorBox.vue'
 import Sheet from '../components/Sheet.vue'
@@ -21,7 +22,8 @@ const steps = computed(() => {
   if (!x) return []
   return [
     { label: 'Requested', done: true, when: x.requested_on },
-    { label: x.status === 'Rejected' ? 'Declined' : 'Sent by the treasurer', done: ['Sent', 'Completed', 'Rejected'].includes(x.status), when: x.sent_on, bad: x.status === 'Rejected' },
+    { label: x.status === 'Rejected' ? 'Declined' : 'Approved', done: ['Approved', 'Sent', 'Completed', 'Rejected'].includes(x.status), when: x.approval?.status === 'Approved' ? x.approval.steps.at(-1).decided_on : null, bad: x.status === 'Rejected' },
+    { label: 'Sent by the treasurer', done: ['Sent', 'Completed'].includes(x.status), when: x.sent_on },
     { label: 'Arrived in your account', done: x.status === 'Completed', when: x.received_on },
   ]
 })
@@ -69,7 +71,8 @@ onMounted(load)
               <span class="text-xs text-ink-faint">{{ s.when ? date(s.when, { day: 'numeric', month: 'short' }) : '' }}</span>
             </li>
           </ol>
-          <button v-if="w.status === 'Pending' && w.is_mine" class="btn-ghost mt-4 w-full text-neg" @click="confirmCancel = true">Cancel request</button>
+          <ApprovalSteps v-if="w.approval && w.status === 'Pending'" :approval="w.approval" class="mt-5 rounded-2xl bg-sunk p-4" />
+          <button v-if="['Pending', 'Approved'].includes(w.status) && w.is_mine" class="btn-ghost mt-4 w-full text-neg" @click="confirmCancel = true">Cancel request</button>
         </section>
 
         <TransferConfirm v-if="w.status === 'Sent' && w.is_mine" kind="withdrawal" :doc="w" @done="confirmed" />

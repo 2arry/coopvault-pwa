@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import * as api from '../../../api'
-import { current, currency, isOwner, toast } from '../../../store'
+import { current, currency, can, toast } from '../../../store'
 import { money } from '../../../format'
 import PageHeader from '../../../components/PageHeader.vue'
 import Loader from '../../../components/Loader.vue'
@@ -58,7 +58,7 @@ async function save() {
       <section v-for="g in accounts ? groups : []" :key="g.key">
         <div class="flex items-center justify-between px-1">
           <h2 class="text-sm font-semibold">{{ g.label }}</h2>
-          <button v-if="isOwner" class="text-xs font-semibold link" @click="add(g.key)"><Icon name="plus" :size="14" /> Add</button>
+          <button v-if="can('close')" class="text-xs font-semibold link" @click="add(g.key)"><Icon name="plus" :size="14" /> Add</button>
         </div>
         <div class="card mt-2 divide-soft">
           <div v-for="a in g.rows" :key="a.name" class="flex items-center gap-3 px-4 py-3" :class="a.disabled ? 'opacity-50' : ''">
@@ -70,7 +70,7 @@ async function save() {
               </span>
               <span class="num text-sm">{{ money(a.closing, currency) }}</span>
             </RouterLink>
-            <button v-if="isOwner" class="grid h-8 w-8 place-items-center rounded-lg text-ink-faint hover:text-ink" :aria-label="`Edit ${a.account_name}`" @click="edit(a)"><Icon name="edit" :size="15" /></button>
+            <button v-if="can('close')" class="grid h-8 w-8 place-items-center rounded-lg text-ink-faint hover:text-ink" :aria-label="`Edit ${a.account_name}`" @click="edit(a)"><Icon name="edit" :size="15" /></button>
           </div>
         </div>
       </section>

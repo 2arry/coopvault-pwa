@@ -7,6 +7,7 @@ import Loader from '../../components/Loader.vue'
 import ErrorBox from '../../components/ErrorBox.vue'
 import Sheet from '../../components/Sheet.vue'
 import BankAccountForm from '../../components/BankAccountForm.vue'
+import ApprovalRules from '../../components/ApprovalRules.vue'
 import Icon from '../../components/Icon.vue'
 
 const coop = ref(null)
@@ -169,6 +170,8 @@ function shareInvite() {
           <p class="hint">{{ feeRule(state.paystack.fees, currency) }}. {{ coop.fee_bearer === 'Member' ? 'It’s added at checkout, so the full contribution reaches the pool.' : 'Members pay the exact amount, and the fee comes out of what the cooperative receives.' }}</p>
         </div>
       </section>
+
+      <ApprovalRules />
 
       <RouterLink to="/announcements" class="card flex items-center gap-3.5 p-4">
         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-accent-soft text-accent-text"><Icon name="bell" :size="18" /></span>

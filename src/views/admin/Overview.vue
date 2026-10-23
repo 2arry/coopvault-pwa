@@ -45,7 +45,7 @@ const shareGroup = () => shareText(groupUpdate(tracker.value, coopName.value, cu
         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-card"><Icon name="receipt" :size="18" /></span>
         <span class="flex-1 text-sm">
           <b class="block">{{ pendingTotal }} waiting for you</b>
-          <span>{{ [pending.unmatched && `${pending.unmatched} transfer${pending.unmatched > 1 ? 's' : ''} to match`, pending.disputes && `${pending.disputes} transfer${pending.disputes > 1 ? 's' : ''} not received`, pending.members && `${pending.members} join request${pending.members > 1 ? 's' : ''}`, pending.loans && `${pending.loans} loan${pending.loans > 1 ? 's' : ''}`, pending.withdrawals && `${pending.withdrawals} withdrawal${pending.withdrawals > 1 ? 's' : ''}`].filter(Boolean).join(' · ') }}</span>
+          <span>{{ [pending.approvals && `${pending.approvals} to approve`, pending.to_send && `${pending.to_send} to send`, pending.disputes && `${pending.disputes} transfer${pending.disputes > 1 ? 's' : ''} not received`, pending.unmatched && `${pending.unmatched} transfer${pending.unmatched > 1 ? 's' : ''} to match`].filter(Boolean).join(' · ') }}</span>
         </span>
         <Icon name="chevron" :size="18" />
       </button>

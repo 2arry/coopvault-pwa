@@ -18,7 +18,7 @@ const owing = (m) => ['due', 'behind'].includes(standings.value[m.name]?.state)
 const shown = computed(() => (members.value || []).filter((m) => {
   if (filter.value === 'owing' && !owing(m)) return false
   if (filter.value === 'loans' && !(m.loan_outstanding > 0)) return false
-  return !q.value || `${m.full_name} ${m.user} ${m.phone || ''}`.toLowerCase().includes(q.value.toLowerCase())
+  return !q.value || `${m.full_name} ${m.user} ${m.phone || ''} ${m.member_number || ''}`.toLowerCase().includes(q.value.toLowerCase())
 }))
 const totals = computed(() => (members.value || []).reduce((t, m) => ({
   saved: t.saved + (m.total_contributed || 0), owed: t.owed + (m.loan_outstanding || 0),
@@ -58,7 +58,7 @@ onActivated(() => members.value && load())
       </div>
       <div class="relative">
         <Icon name="search" :size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint" />
-        <input v-model="q" class="input pl-11" placeholder="Search by name or phone" type="search" />
+        <input v-model="q" class="input pl-11" placeholder="Search by name, phone or member no." type="search" />
       </div>
       <div class="no-scrollbar -mx-5 flex gap-2 overflow-x-auto px-5">
         <button v-for="f in [{ k: 'all', l: `Everyone (${members.length})` }, { k: 'owing', l: 'Still to pay' }, { k: 'loans', l: 'Has a loan' }]" :key="f.k"
@@ -74,7 +74,7 @@ onActivated(() => members.value && load())
               <span v-if="m.role !== 'Member'" class="rounded-md bg-sunk px-1.5 py-0.5 text-[10px] font-bold text-ink-soft">{{ m.role }}</span>
             </div>
             <p class="num truncate text-xs text-ink-soft">
-              Savings {{ money(m.total_contributed, currency) }}<span v-if="m.loan_outstanding"> · owes {{ money(m.loan_outstanding, currency) }}</span>
+              <span v-if="m.member_number" class="text-ink-faint">{{ m.member_number }} · </span>Savings {{ money(m.total_contributed, currency) }}<span v-if="m.loan_outstanding"> · owes {{ money(m.loan_outstanding, currency) }}</span>
             </p>
           </div>
           <StatusPill v-if="m.status !== 'Active'" :status="m.status" />

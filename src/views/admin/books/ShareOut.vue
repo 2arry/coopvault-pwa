@@ -11,6 +11,7 @@ import ErrorBox from '../../../components/ErrorBox.vue'
 import Sheet from '../../../components/Sheet.vue'
 import StatusPill from '../../../components/StatusPill.vue'
 import Icon from '../../../components/Icon.vue'
+import ApprovalSteps from '../../../components/ApprovalSteps.vue'
 
 const props = defineProps({ name: String })
 const router = useRouter()
@@ -157,7 +158,8 @@ async function cancel() {
             <button class="btn-secondary" :disabled="busy" @click="cancel">Cancel it</button>
             <button class="btn-primary" :disabled="busy || !doc.can_approve" @click="confirming = true">Approve</button>
           </div>
-          <p v-if="!doc.can_approve" class="flex gap-2 text-xs text-ink-soft"><Icon name="info" :size="14" class="mt-0.5" /> An admin other than {{ doc.prepared_by_name }} approves it.</p>
+          <p v-if="!doc.can_approve && doc.approval?.why_not" class="flex gap-2 text-xs text-ink-soft"><Icon name="info" :size="14" class="mt-0.5 shrink-0" /> {{ doc.approval.why_not }}</p>
+          <section v-if="doc.approval" class="card p-5"><ApprovalSteps :approval="doc.approval" /></section>
         </template>
         <p v-else-if="doc?.status === 'Posted'" class="flex gap-2 rounded-2xl bg-pos-soft p-3 text-sm text-pos"><Icon name="checkCircle" :size="16" class="mt-0.5" /> Posted {{ date(doc.posted_on) }} by {{ doc.approved_by_name }}. <RouterLink v-if="doc.journal_entry" :to="`/admin/books/journal/${doc.journal_entry}`" class="link ml-auto">Entry</RouterLink></p>
       </template>

@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import * as api from '../../api'
-import { current, currency, isOwner, toast, shareText, copyText } from '../../store'
+import { current, currency, can, ROLES, toast, shareText, copyText } from '../../store'
 import { money, date, relative, today, paidThroughLabel, periodWord, whatsappLink, appUrl } from '../../format'
 import { memberReminder } from '../../reminders'
 import PageHeader from '../../components/PageHeader.vue'
@@ -12,6 +12,7 @@ import ErrorBox from '../../components/ErrorBox.vue'
 import Sheet from '../../components/Sheet.vue'
 import StatusPill from '../../components/StatusPill.vue'
 import Icon from '../../components/Icon.vue'
+import RecordPayment from '../../components/RecordPayment.vue'
 
 const props = defineProps({ name: String })
 const st = ref(null)
@@ -21,6 +22,16 @@ const confirming = ref(null) // { title, subtitle, action, fields, danger }
 const opening = ref(false)
 const ob = ref({ amount: '', as_of: today(), note: '' })
 const reset = ref(null)
+const recording = ref(false)
+// What each role can do, in the members' own words
+const ROLE_INFO = {
+  Admin: 'Sets the group up: rules, bank account, roles, approval rules and password resets. Can do everything below.',
+  Chairman: 'Signs off big approvals (like loans of ₦500k and above), can suspend members and reads the books.',
+  Accountant: 'Keeps the books: records offline payments, prepares journal entries and the year-end share-out.',
+  Treasurer: 'Moves the money: sends approved loans and withdrawals, records offline payments, approves new members.',
+  'Loan Officer': 'Reviews loan requests and follows up repayments.',
+  Member: 'Saves, borrows and withdraws. No officer powers.',
+}
 
 const member = computed(() => st.value?.member)
 const s = computed(() => st.value?.standing)
@@ -44,9 +55,10 @@ function ask(change) {
   const options = {
     Suspended: { title: `Suspend ${name}?`, subtitle: 'They can still log in and see their records, but can’t pay, borrow or withdraw until you reinstate them.', danger: true },
     Active: { title: `Reinstate ${name}?`, subtitle: 'They’ll be able to pay, borrow and withdraw again.' },
-    Admin: { title: `Make ${name} an admin?`, subtitle: 'Admins can change the rules, the bank account, roles and reset passwords.' },
-    Treasurer: { title: `Make ${name} the treasurer?`, subtitle: 'Treasurers send loans and withdrawals, approve new members and propose opening balances. They can’t change settings or roles.' },
-    Member: { title: `Make ${name} a regular member?`, subtitle: 'They’ll lose any admin or treasurer powers.' },
+    ...Object.fromEntries(ROLES.map((r) => [r, {
+      title: r === 'Member' ? `Make ${name} a regular member?` : `Make ${name} ${r === 'Admin' || r === 'Accountant' ? 'an' : 'the'} ${r.toLowerCase()}?`,
+      subtitle: ROLE_INFO[r],
+    }])),
   }
   const key = change.status || change.role
   confirming.value = { ...options[key], fields: change }
@@ -84,7 +96,7 @@ onMounted(load)
 
 <template>
   <div>
-    <PageHeader :title="member?.full_name || 'Member'" :subtitle="member?.phone" back="/admin?tab=members" />
+    <PageHeader :title="member?.full_name || 'Member'" :subtitle="[member?.member_number, member?.role !== 'Member' ? member?.role : null].filter(Boolean).join(' · ')" back="/admin?tab=members" />
     <div class="space-y-4 px-5 pb-12 pt-1">
       <ErrorBox :message="error" />
       <Loader v-if="!st && !error" />
@@ -105,12 +117,13 @@ onMounted(load)
               <template v-else>Starts {{ date(s.next_due_date, { day: 'numeric', month: 'short' }) }}</template>
             </p>
           </div>
-          <div v-if="owing || (!isSelf)" class="mt-4 grid grid-cols-2 gap-2">
+          <div v-if="owing || can('record') || (can('opening') && !isSelf)" class="mt-4 grid grid-cols-2 gap-2">
             <template v-if="owing">
               <a v-if="member.phone" :href="whatsappLink(member.phone, reminder)" target="_blank" rel="noopener" class="btn-secondary btn-sm"><Icon name="chat" :size="16" /> Remind</a>
               <button v-else class="btn-secondary btn-sm" @click="shareText(reminder)"><Icon name="share" :size="16" /> Remind</button>
             </template>
-            <button v-if="!isSelf" class="btn-secondary btn-sm whitespace-nowrap" :class="owing ? '' : 'col-span-2'" @click="opening = true; ob = { amount: '', as_of: today(), note: '' }">Opening balance</button>
+            <button v-if="can('record') && member.status === 'Active'" class="btn-secondary btn-sm whitespace-nowrap" @click="recording = true"><Icon name="plus" :size="16" /> Record payment</button>
+            <button v-if="can('opening') && !isSelf" class="btn-secondary btn-sm whitespace-nowrap" @click="opening = true; ob = { amount: '', as_of: today(), note: '' }">Opening balance</button>
           </div>
         </section>
 
@@ -119,18 +132,21 @@ onMounted(load)
             <div class="flex items-center justify-between"><span class="text-ink-soft">Phone</span><span>{{ member.phone || '—' }}</span></div>
             <p v-if="phoneRecent" class="mt-2 flex gap-2 rounded-2xl bg-warn-soft p-2.5 text-xs text-warn"><Icon name="alert" :size="14" class="mt-0.5 shrink-0" /> Changed {{ relative(member.phone_changed_on) }}. Make sure it was really them before sending a reset code.</p>
           </div>
-          <div class="flex items-center justify-between p-4">
-            <span class="text-ink-soft">Role</span>
-            <select v-if="isOwner && !isSelf" :value="member.role" class="rounded-xl border border-line/12 bg-card px-3 py-1.5" @change="ask({ role: $event.target.value }); $event.target.value = member.role">
-              <option>Member</option><option>Treasurer</option><option>Admin</option>
-            </select>
-            <span v-else>{{ member.role }}</span>
+          <div class="p-4">
+            <div class="flex items-center justify-between">
+              <span class="text-ink-soft">Role</span>
+              <select v-if="can('settings') && !isSelf" :value="member.role" class="rounded-xl border border-line/12 bg-card px-3 py-1.5" @change="ask({ role: $event.target.value }); $event.target.value = member.role">
+                <option v-for="r in ROLES" :key="r">{{ r }}</option>
+              </select>
+              <span v-else>{{ member.role }}</span>
+            </div>
+            <p v-if="member.role !== 'Member'" class="mt-1.5 text-xs text-ink-soft">{{ ROLE_INFO[member.role] }}</p>
           </div>
           <div class="flex items-center justify-between p-4">
             <span class="text-ink-soft">Status</span>
             <div class="flex items-center gap-3">
               <StatusPill :status="member.status" />
-              <template v-if="isOwner && !isSelf">
+              <template v-if="can('suspend') && !isSelf">
                 <button v-if="member.status === 'Active'" class="text-xs font-semibold text-neg" @click="ask({ status: 'Suspended' })">Suspend</button>
                 <button v-else-if="member.status === 'Suspended'" class="text-xs font-semibold text-brand-text" @click="ask({ status: 'Active' })">Reinstate</button>
               </template>
@@ -147,7 +163,7 @@ onMounted(load)
             </div>
             <p v-if="payoutRecent" class="mt-2 flex gap-2 rounded-2xl bg-warn-soft p-2.5 text-xs text-warn"><Icon name="alert" :size="14" class="mt-0.5" /> Changed {{ relative(member.payout_changed_on) }}. Check with them before sending money.</p>
           </div>
-          <button v-if="isOwner && !isSelf" class="flex w-full items-center gap-3 p-4 text-left" @click="createReset">
+          <button v-if="can('reset') && !isSelf" class="flex w-full items-center gap-3 p-4 text-left" @click="createReset">
             <Icon name="lock" :size="18" class="text-ink-soft" />
             <span class="flex-1"><span class="block font-semibold">Reset password</span><span class="block text-xs text-ink-soft">Creates a one-time code to give them</span></span>
             <Icon name="chevron" :size="18" class="text-ink-faint" />
@@ -180,6 +196,7 @@ onMounted(load)
       </form>
     </Sheet>
 
+    <RecordPayment :open="recording" :member="member" @close="recording = false" @done="load" />
     <Sheet :open="!!reset" title="Reset code" :subtitle="`Give this to ${reset?.full_name}. It works once and expires in ${reset?.minutes} minutes.`" @close="reset = null">
       <template v-if="reset">
         <p v-if="resetPhoneRecent" class="mb-4 flex gap-2 rounded-2xl bg-warn-soft p-3 text-sm text-warn"><Icon name="alert" :size="16" class="mt-0.5 shrink-0" /> Their phone number changed {{ relative(reset.phone_changed_on) }}. Call or meet them to confirm it’s really them before you share this.</p>

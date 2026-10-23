@@ -5,3 +5,6 @@ dev-dist
 *.local
 .DS_Store
 firebase-debug.log
+dist-stage
+e2e/node_modules
+e2e/shots
