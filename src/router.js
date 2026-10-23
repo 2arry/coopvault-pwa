@@ -38,6 +38,7 @@ const routes = [
   { path: '/pay/callback', component: view('PayCallback') },
   { path: '/admin', component: view('admin/Admin'), meta: { tab: 'admin', admin: true } },
   { path: '/admin/members/:name', component: view('admin/MemberDetail'), props: true, meta: { tab: 'admin', admin: true } },
+  { path: '/admin/loan-book', component: view('admin/LoanBook'), meta: { admin: true } },
   { path: '/admin/books/report/:kind', component: view('admin/books/Report'), props: true, meta: { admin: true } },
   { path: '/admin/books/journals', component: view('admin/books/Journals'), meta: { admin: true } },
   { path: '/admin/books/journal/new', component: view('admin/books/JournalNew'), meta: { admin: true } },

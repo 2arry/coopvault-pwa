@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted, onActivated } from 'vue'
 import * as api from '../../api'
-import { current, currency, dashboard, loadDashboard, shareText } from '../../store'
+import { current, currency, dashboard, loadDashboard, shareText, can } from '../../store'
 import { money, shortDate, periodName, paidThroughLabel, periodWord, initials, whatsappLink } from '../../format'
 import { memberReminder, groupUpdate } from '../../reminders'
 import Loader from '../../components/Loader.vue'
@@ -49,6 +49,12 @@ const shareGroup = () => shareText(groupUpdate(tracker.value, coopName.value, cu
         </span>
         <Icon name="chevron" :size="18" />
       </button>
+
+      <RouterLink v-if="can('loans')" to="/admin/loan-book" class="card flex items-center gap-3.5 p-4">
+        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-info-soft text-info"><Icon name="loans" :size="18" /></span>
+        <span class="flex-1"><b class="block text-[15px]">Loan book</b><span class="text-xs text-ink-soft">What’s out, who’s late, guarantors</span></span>
+        <Icon name="chevron" :size="18" class="text-ink-faint" />
+      </RouterLink>
 
       <!-- Period progress -->
       <section v-if="p" class="card p-5">

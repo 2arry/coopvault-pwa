@@ -23,6 +23,7 @@ const sentLoans = computed(() => (data.value?.active_loans || []).filter((l) => 
 const sentWithdrawals = computed(() => (data.value?.withdrawals || []).filter((w) => w.status === 'Sent'))
 const pendingWithdrawals = computed(() => (data.value?.withdrawals || []).filter((w) => ['Pending', 'Approved'].includes(w.status)))
 const openingBalances = computed(() => data.value?.opening_balances || [])
+const guaranteeRequests = computed(() => data.value?.guarantee_requests || [])
 const unread = computed(() => data.value?.unread_notifications || 0)
 const holdUntil = computed(() => {
   const h = data.value?.security_hold_until
@@ -154,6 +155,14 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
         <Icon name="shield" :size="18" class="mt-0.5" />
         <p>Your password was reset, so payout changes, loans and withdrawals are paused until <b>{{ date(holdUntil, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) }}</b>.</p>
       </section>
+      <RouterLink v-for="g in guaranteeRequests" :key="g.loan" :to="`/loans/${g.loan}`" class="card flex items-center gap-3.5 border-brand-text/30 p-4">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand-text"><Icon name="shield" /></span>
+        <div class="min-w-0 flex-1">
+          <p class="text-[15px] font-semibold">{{ g.borrower }} asked you to be a guarantor</p>
+          <p class="truncate text-xs text-ink-soft">{{ money(g.amount, currency) }} of their {{ money(g.principal, currency) }} loan</p>
+        </div>
+        <span class="btn-primary btn-sm">Answer</span>
+      </RouterLink>
       <div v-for="ob in openingBalances" :key="ob.name" class="card border-brand-text/30 p-4">
         <p class="text-xs font-semibold text-brand-text">Please confirm</p>
         <p class="mt-1 text-[15px]">Your opening balance of <b class="money">{{ money(ob.amount, currency) }}</b>, what you’d saved before Cooperative360{{ ob.contribution_date ? ` (as of ${date(ob.contribution_date)})` : '' }}.</p>

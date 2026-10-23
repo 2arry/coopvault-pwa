@@ -8,6 +8,7 @@ import ErrorBox from '../../components/ErrorBox.vue'
 import Sheet from '../../components/Sheet.vue'
 import BankAccountForm from '../../components/BankAccountForm.vue'
 import ApprovalRules from '../../components/ApprovalRules.vue'
+import LoanProducts from '../../components/LoanProducts.vue'
 import Icon from '../../components/Icon.vue'
 
 const coop = ref(null)
@@ -115,21 +116,7 @@ function shareInvite() {
         </div>
       </section>
 
-      <section class="space-y-4">
-        <h2 class="section-title">Loans</h2>
-        <div>
-          <label class="label" for="smult">How much of their savings can members borrow?</label>
-          <select id="smult" v-model.number="coop.loan_multiplier" class="input">
-            <option :value="1">All of it (100%)</option><option :value="0.75">Three quarters (75%)</option><option :value="0.5">Half (50%)</option><option :value="0.25">A quarter (25%)</option>
-            <option v-if="![1, 0.75, 0.5, 0.25].includes(Number(coop.loan_multiplier))" :value="coop.loan_multiplier">{{ Math.round(coop.loan_multiplier * 100) }}%</option>
-          </select>
-          <p class="hint">Members can never borrow more than they’ve saved. What they still owe is taken off their limit.</p>
-        </div>
-        <div class="grid grid-cols-2 gap-3">
-          <div><label class="label" for="srate">Interest (flat %)</label><input id="srate" v-model="coop.interest_rate" type="number" min="0" max="100" step="0.5" class="input" /></div>
-          <div><label class="label" for="sten">Longest term (months)</label><input id="sten" v-model="coop.max_loan_tenure_months" type="number" min="1" class="input" /></div>
-        </div>
-      </section>
+      <p class="flex gap-2 rounded-2xl bg-sunk p-3 text-sm text-ink-soft"><Icon name="info" :size="16" class="mt-0.5 shrink-0" /> Loan rates, terms and limits are set per loan product, further down.</p>
 
       <section class="space-y-4">
         <h2 class="section-title">Bank account</h2>
@@ -170,6 +157,8 @@ function shareInvite() {
           <p class="hint">{{ feeRule(state.paystack.fees, currency) }}. {{ coop.fee_bearer === 'Member' ? 'It’s added at checkout, so the full contribution reaches the pool.' : 'Members pay the exact amount, and the fee comes out of what the cooperative receives.' }}</p>
         </div>
       </section>
+
+      <LoanProducts />
 
       <ApprovalRules />
 

@@ -157,13 +157,14 @@ async function match() {
               <p class="text-sm text-ink-soft">{{ a.detail.phone || a.detail.user }} · asked {{ relative(a.detail.creation) }}</p>
             </div>
             <template v-else-if="a.action === 'Loan'">
-              <p class="mt-1 text-xs text-ink-soft">{{ a.detail.tenure_months }} month{{ a.detail.tenure_months > 1 ? 's' : '' }} · asked {{ date(a.detail.application_date) }} · pays back {{ money(a.detail.total_payable, currency) }}</p>
+              <p class="mt-1 text-xs text-ink-soft">{{ a.detail.product_name ? `${a.detail.product_name} · ` : '' }}{{ a.detail.rate_text }} · {{ a.detail.tenure_months }} month{{ a.detail.tenure_months > 1 ? 's' : '' }} · pays back {{ money(a.detail.total_payable, currency) }}</p>
               <p v-if="a.detail.purpose" class="mt-2 rounded-2xl bg-sunk p-3 text-sm">{{ a.detail.purpose }}</p>
               <dl class="mt-3 grid grid-cols-3 gap-2 text-xs">
                 <div><dt class="text-ink-soft">Saved</dt><dd class="num font-semibold">{{ money(a.detail.member_balances.savings, currency) }}</dd></div>
                 <div><dt class="text-ink-soft">Owes</dt><dd class="num font-semibold">{{ money(a.detail.member_balances.loan_outstanding, currency) }}</dd></div>
                 <div><dt class="text-ink-soft">Limit</dt><dd class="num font-semibold">{{ money(a.detail.member_balances.borrow_limit, currency) }}</dd></div>
               </dl>
+              <p v-if="a.detail.guarantors?.length" class="mt-2 text-xs text-ink-soft">Guarantors: {{ a.detail.guarantors.map((g) => `${g.member_name} ${money(g.amount, currency)} (${g.status === 'Accepted' ? 'agreed' : g.status.toLowerCase()})`).join(', ') }}</p>
               <p v-if="a.amount > data.pool.pool_balance" class="mt-3 rounded-2xl bg-warn-soft p-3 text-xs text-warn">The pool has {{ money(data.pool.pool_balance, currency) }} now, so it can’t be sent until more comes in.</p>
             </template>
             <template v-else-if="a.action === 'Withdrawal'">
@@ -268,6 +269,7 @@ async function match() {
               <Icon name="chevronDown" :size="16" class="text-ink-faint transition group-open:rotate-180" />
             </summary>
             <ApprovalSteps :approval="a" class="mt-3" />
+            <button v-if="a.can_reject" class="btn-secondary btn-sm mt-3 w-full" :disabled="busy === a.name" @click="askDecline(a)">Decline it</button>
           </details>
         </div>
       </section>
