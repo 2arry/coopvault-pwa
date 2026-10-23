@@ -1,0 +1,21 @@
+// Production smoke check for loans (read-only: answers nothing, sends nothing).
+import { PROD as env, suite, page, go, launch } from './lib.mjs'
+
+const t = suite(process.argv[2] || 'shots/prod-loans')
+const b = await launch()
+const ngozi = await page(b, env, t, 'ngozi')
+await go(ngozi, env, '/home', 1500)
+t.check('Ngozi sees Musa’s guarantee request', await ngozi.getByText(/Musa Bello asked you to be a guarantor/).isVisible())
+await t.shot(ngozi, 'p1-ngozi-home')
+const musa = await page(b, env, t, 'musa')
+await go(musa, env, '/loans', 1500)
+await musa.getByText(/₦21,000/).first().click()
+await musa.waitForTimeout(1500)
+t.check('Musa’s loan shows its repayment plan, first instalment paid', await musa.getByText('Repayment plan').isVisible())
+await t.shot(musa, 'p2-musa-loan')
+const lola = await page(b, env, t, 'lola')
+await go(lola, env, '/admin/loan-book', 1500)
+t.check('loan book on production', await lola.getByText('Out on loan').isVisible())
+await t.shot(lola, 'p3-loan-book')
+await b.close()
+t.done()

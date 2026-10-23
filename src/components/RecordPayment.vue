@@ -3,7 +3,7 @@
 // images); it counts once another officer checks it arrived and approves it.
 import { ref, computed, watch } from 'vue'
 import * as api from '../api'
-import { current, currency, toast } from '../store'
+import { current, currency, dashboard, toast } from '../store'
 import { money, isoDate } from '../format'
 import AmountField from './AmountField.vue'
 import ErrorBox from './ErrorBox.vue'
@@ -17,7 +17,8 @@ const loans = ref([])
 const busy = ref(false)
 const error = ref('')
 const blank = () => ({ member: props.member?.name || '', purpose: 'savings', loan: '', amount: '', payment_date: isoDate(new Date()),
-  payment_method: 'Bank Transfer', reference: '', note: '' })
+  payment_method: 'Bank Transfer', reference: '', note: '', savings_product: '' })
+const products = computed(() => dashboard.value?.savings_products || [])
 const form = ref(blank())
 
 watch(() => props.open, async (open) => {
@@ -49,6 +50,7 @@ async function submit() {
     await api.post('finance.record_offline_payment', {
       cooperative: current.value.cooperative, member: f.member, amount: f.amount, payment_date: f.payment_date,
       payment_method: f.payment_method, reference: f.reference, note: f.note, loan: f.purpose === 'loan' ? f.loan : null,
+      savings_product: f.purpose === 'savings' ? f.savings_product || null : null,
     })
     toast('Recorded. Another officer approves it once they’ve checked it arrived.')
     emit('done')
@@ -75,6 +77,12 @@ async function submit() {
       <div v-if="form.purpose === 'loan' && loans.length > 1">
         <label class="label" for="rp-loan">Which loan</label>
         <select id="rp-loan" v-model="form.loan" class="input"><option v-for="l in loans" :key="l.name" :value="l.name">{{ l.name }} · {{ money(l.balance, currency) }} left</option></select>
+      </div>
+      <div v-if="form.purpose === 'savings' && products.length > 1">
+        <label class="label" for="rp-product">Saved into</label>
+        <select id="rp-product" v-model="form.savings_product" class="input">
+          <option v-for="p in products" :key="p.name" :value="p.kind === 'Regular contributions' ? '' : p.name">{{ p.product_name }}</option>
+        </select>
       </div>
       <AmountField v-model="form.amount" :currency="currency" label="Amount" id="rp-amount" />
       <p v-if="form.purpose === 'loan' && chosenLoan" class="hint !-mt-2">{{ money(chosenLoan.balance, currency) }} left on this loan.</p>

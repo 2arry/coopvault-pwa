@@ -1,18 +1,20 @@
 <script setup>
 import { ref, computed, onMounted, onActivated } from 'vue'
 import * as api from '../../api'
-import { current, currency } from '../../store'
+import { current, currency, can } from '../../store'
 import { money, initials } from '../../format'
 import Loader from '../../components/Loader.vue'
 import ErrorBox from '../../components/ErrorBox.vue'
 import StatusPill from '../../components/StatusPill.vue'
 import Icon from '../../components/Icon.vue'
+import AddMember from '../../components/AddMember.vue'
 
 const members = ref(null)
 const standings = ref({})
 const error = ref('')
 const q = ref('')
 const filter = ref('all')
+const adding = ref(false)
 
 const owing = (m) => ['due', 'behind'].includes(standings.value[m.name]?.state)
 const shown = computed(() => (members.value || []).filter((m) => {
@@ -56,6 +58,11 @@ onActivated(() => members.value && load())
         <div class="card p-4"><p class="text-xs text-ink-soft">Saved by members</p><p class="money text-xl">{{ money(totals.saved, currency) }}</p></div>
         <div class="card p-4"><p class="text-xs text-ink-soft">Owed to the pool</p><p class="money text-xl">{{ money(totals.owed, currency) }}</p></div>
       </div>
+      <button v-if="can('members')" type="button" class="flex w-full items-center gap-3.5 rounded-3xl border border-dashed border-brand-text/40 bg-brand-soft/60 p-4 text-left" @click="adding = true">
+        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-card text-brand-text"><Icon name="userPlus" :size="19" /></span>
+        <span class="flex-1"><b class="block text-[15px]">Add a member</b><span class="text-sm text-ink-soft">For someone not on the app yet. They get a setup code.</span></span>
+        <Icon name="chevron" :size="18" class="text-ink-faint" />
+      </button>
       <div class="relative">
         <Icon name="search" :size="18" class="absolute left-4 top-1/2 -translate-y-1/2 text-ink-faint" />
         <input v-model="q" class="input pl-11" placeholder="Search by name, phone or member no." type="search" />
@@ -83,5 +90,6 @@ onActivated(() => members.value && load())
         <p v-if="!shown.length" class="p-6 text-center text-sm text-ink-soft">No members match.</p>
       </div>
     </template>
+    <AddMember :open="adding" @close="adding = false" @added="load" />
   </div>
 </template>

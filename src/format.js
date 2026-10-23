@@ -130,3 +130,9 @@ export const isoDate = (d) => {
   const x = d instanceof Date ? d : new Date(String(d).slice(0, 10) + 'T00:00:00')
   return `${x.getFullYear()}-${String(x.getMonth() + 1).padStart(2, '0')}-${String(x.getDate()).padStart(2, '0')}`
 }
+
+/** "Sat 7 Nov, 10:00 am" for meeting times (site and members share Nigeria's time zone). */
+export const dateTime = (value) => date(value, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
+
+/** A server datetime as the value of an <input type="datetime-local">. */
+export const localInput = (value) => (value ? String(value).replace(' ', 'T').slice(0, 16) : '')

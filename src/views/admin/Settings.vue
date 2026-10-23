@@ -9,6 +9,7 @@ import Sheet from '../../components/Sheet.vue'
 import BankAccountForm from '../../components/BankAccountForm.vue'
 import ApprovalRules from '../../components/ApprovalRules.vue'
 import LoanProducts from '../../components/LoanProducts.vue'
+import SavingsProducts from '../../components/SavingsProducts.vue'
 import Icon from '../../components/Icon.vue'
 
 const coop = ref(null)
@@ -17,6 +18,7 @@ const error = ref('')
 const busy = ref(false)
 const connecting = ref(false)
 const confirmNewCode = ref(false)
+const savingsProducts = ref([])
 const online = computed(() => state.paystack.enabled)
 const inviteLink = computed(() => appUrl(`/join/${coop.value?.join_code}`))
 
@@ -37,9 +39,10 @@ async function save() {
   error.value = ''
   try {
     const { cooperative_name, description, loan_multiplier, interest_rate, max_loan_tenure_months, accept_online_payments, fee_bearer,
-      contribution_amount, contribution_frequency, start_date } = coop.value
+      contribution_amount, contribution_frequency, start_date, auto_allocate, extra_savings_product } = coop.value
     const res = await api.post('coop.update_cooperative', { cooperative: current.value.cooperative, cooperative_name, description, loan_multiplier,
-      interest_rate, max_loan_tenure_months, accept_online_payments, fee_bearer, contribution_amount, contribution_frequency, start_date })
+      interest_rate, max_loan_tenure_months, accept_online_payments, fee_bearer, contribution_amount, contribution_frequency, start_date,
+      auto_allocate, extra_savings_product: extra_savings_product || '' })
     await refreshMemberships()
     apply(await loadDashboard())
     toast(res.plan_change ? `Saved. The new amount starts ${date(res.plan_change.effective_from)} and everyone’s been told.` : 'Settings saved')
@@ -155,6 +158,24 @@ function shareInvite() {
             <button type="button" :class="{ on: coop.fee_bearer === 'Cooperative' }" @click="coop.fee_bearer = 'Cooperative'">The cooperative</button>
           </div>
           <p class="hint">{{ feeRule(state.paystack.fees, currency) }}. {{ coop.fee_bearer === 'Member' ? 'It’s added at checkout, so the full contribution reaches the pool.' : 'Members pay the exact amount, and the fee comes out of what the cooperative receives.' }}</p>
+        </div>
+      </section>
+
+      <SavingsProducts @change="(rows) => (savingsProducts = rows)" />
+
+      <section class="space-y-4">
+        <h2 class="section-title">Money that comes in by transfer</h2>
+        <label class="flex items-center justify-between gap-4 rounded-3xl bg-card p-4 shadow-soft">
+          <span><b class="block text-[15px]">Pay what’s due first</b><span class="text-sm text-ink-soft">A transfer to a member’s account number (or one you match to them) pays contributions due, then loan instalments due, then savings.</span></span>
+          <input v-model="coop.auto_allocate" type="checkbox" :true-value="1" :false-value="0" class="h-6 w-6 shrink-0 accent-[rgb(var(--brand))]" />
+        </label>
+        <div>
+          <label class="label" for="sextra">Anything extra goes to</label>
+          <select id="sextra" v-model="coop.extra_savings_product" class="input">
+            <option :value="null">Regular contributions (paying ahead)</option>
+            <option v-for="p in savingsProducts.filter((x) => x.kind !== 'Regular contributions' && x.enabled)" :key="p.name" :value="p.name">{{ p.product_name }}</option>
+          </select>
+          <p class="hint">Also used when a member pays more than is left on a loan.</p>
         </div>
       </section>
 

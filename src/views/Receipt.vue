@@ -21,13 +21,17 @@ const methodLabel = computed(() => ({ Paystack: 'Paid online (Paystack)', 'Openi
 const statusLabel = computed(() => ({ Confirmed: 'Confirmed', Pending: 'Waiting for you to confirm', Rejected: 'Declined', Reversed: 'Reversed (refunded or disputed)' }[r.value?.status] || r.value?.status))
 const statusClass = computed(() => (confirmed.value ? 'text-pos' : ['Rejected', 'Reversed'].includes(r.value?.status) ? 'text-neg' : 'text-warn'))
 const verb = computed(() => (r.value?.doctype === 'Coop Contribution' ? 'saved' : 'repaid'))
+// One payment shared across dues, loans and savings shows every part, with the total up top
+const parts = computed(() => r.value?.parts || [])
+const shown = computed(() => (parts.value.length ? parts.value.reduce((t, p) => t + p.amount, 0) : r.value?.amount))
 const doneTo = computed(() => (r.value?.loan ? `/loans/${r.value.loan}` : '/home'))
 
 function share() {
   const x = r.value
   const lines = [
     `${confirmed.value ? '✅' : '⏳'} ${x.cooperative_name}`,
-    `${x.member_name} ${opening.value ? 'brought over' : verb.value} ${money(x.amount, x.currency)}`,
+    parts.value.length ? `${x.member_name} paid ${money(shown.value, x.currency)}` : `${x.member_name} ${opening.value ? 'brought over' : verb.value} ${money(x.amount, x.currency)}${x.product_name && x.doctype === 'Coop Contribution' ? ` (${x.product_name})` : ''}`,
+    ...parts.value.map((p) => `• ${p.label}: ${money(p.amount, x.currency)}`),
     `${date(x.date)} · ${methodLabel.value}`,
     `Ref: ${x.name}${x.reference && x.reference !== x.name ? ` / ${x.reference}` : ''}`,
     `${statusLabel.value} on Cooperative360`,
@@ -54,9 +58,10 @@ onMounted(async () => {
           <div class="mx-auto grid h-20 w-20 animate-pop place-items-center rounded-full" :class="confirmed ? 'bg-pos-soft text-pos' : 'bg-warn-soft text-warn'">
             <Icon :name="confirmed ? 'check' : 'clock'" :size="40" :stroke="2.5" />
           </div>
-          <h1 class="mt-5 font-display text-[30px] font-semibold tracking-tight">{{ confirmed ? (r.doctype === 'Coop Contribution' ? 'Saved!' : 'Payment received') : 'Still processing' }}</h1>
+          <h1 class="mt-5 font-display text-[30px] font-semibold tracking-tight">{{ confirmed ? (r.doctype === 'Coop Contribution' && !parts.length ? 'Saved!' : 'Payment received') : 'Still processing' }}</h1>
           <p class="mx-auto mt-2 max-w-xs text-ink-soft">
-            <template v-if="confirmed">{{ money(r.amount, r.currency) }} {{ r.doctype === 'Coop Contribution' ? 'is now in your savings' : 'has been taken off your loan' }}.</template>
+            <template v-if="confirmed && parts.length">{{ money(shown, r.currency) }} was shared across {{ parts.map((p) => p.label).join(', ') }}.</template>
+            <template v-else-if="confirmed">{{ money(r.amount, r.currency) }} {{ r.doctype === 'Coop Contribution' ? (r.product_name && r.kind === r.product_name ? `is now in ${r.product_name}` : 'is now in your savings') : 'has been taken off your loan' }}.</template>
             <template v-else>Paystack hasn’t confirmed this yet. It usually takes a few seconds, and you’ll get a notification.</template>
           </p>
         </div>
@@ -68,12 +73,20 @@ onMounted(async () => {
               <span class="flex items-center gap-1.5"><img src="/logo.svg" alt="" class="h-5 w-5 rounded" /> {{ r.cooperative_name }}</span>
               <span>{{ r.kind }}</span>
             </div>
-            <p class="money mt-4 text-[42px] leading-none">{{ money(r.amount, r.currency) }}</p>
+            <p class="money mt-4 text-[42px] leading-none">{{ money(shown, r.currency) }}</p>
             <p class="mt-2 text-sm text-navy-100/80">{{ r.member_name }}</p>
           </div>
           <div class="relative h-4">
             <span class="absolute -left-3 top-0 h-6 w-6 rounded-full bg-paper" /><span class="absolute -right-3 top-0 h-6 w-6 rounded-full bg-paper" />
             <div class="mx-6 border-t-2 border-dashed border-line/10 pt-2" />
+          </div>
+          <div v-if="parts.length" class="mx-6 mb-2 rounded-2xl bg-sunk p-3 text-sm">
+            <p class="text-xs font-semibold text-ink-soft">This payment covered</p>
+            <div v-for="p in parts" :key="p.name" class="mt-1.5 flex justify-between gap-3">
+              <RouterLink v-if="p.loan" :to="`/loans/${p.loan}`" class="link">{{ p.label }}</RouterLink>
+              <span v-else>{{ p.label }}</span>
+              <span class="num">{{ money(p.amount, r.currency) }}</span>
+            </div>
           </div>
           <dl class="divide-soft px-6 pb-4 text-sm">
             <div class="flex justify-between py-3"><dt class="text-ink-soft">Status</dt><dd class="font-semibold" :class="statusClass">{{ statusLabel }}</dd></div>

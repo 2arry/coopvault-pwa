@@ -54,6 +54,10 @@ const paths = {
   edit: 'M4 20h4L19 9l-4-4L4 16zM13.5 6.5l4 4',
   external: 'M14 4h6v6M20 4l-9 9M18 14v6H4V6h6',
   search: 'M11 18a7 7 0 1 0 0-14 7 7 0 0 0 0 14zM20 20l-4-4',
+  layers: 'M12 3 2 8l10 5 10-5zM2 13l10 5 10-5M2 17.5l10 5 10-5',
+  userPlus: 'M9 11a4 4 0 1 0 0-8 4 4 0 0 0 0 8zM2 21a7 7 0 0 1 12.5-4.3M19 14v6M16 17h6',
+  clipboard: 'M9 4h6v3H9zM9 5H6a1 1 0 0 0-1 1v14a1 1 0 0 0 1 1h12a1 1 0 0 0 1-1V6a1 1 0 0 0-1-1h-3M9 12h6M9 16h4',
+  piggy: 'M5 11a7 6 0 0 1 12-3l3-1v4l1 1v3l-2 1-2 3h-3v-2H9v2H6l-1-3a6 6 0 0 1 0-5zM15 10h.01',
 }
 defineProps({ name: { type: String, required: true }, size: { type: [Number, String], default: 20 }, stroke: { type: [Number, String], default: 2 } })
 </script>

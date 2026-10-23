@@ -24,6 +24,14 @@ const sentWithdrawals = computed(() => (data.value?.withdrawals || []).filter((w
 const pendingWithdrawals = computed(() => (data.value?.withdrawals || []).filter((w) => ['Pending', 'Approved'].includes(w.status)))
 const openingBalances = computed(() => data.value?.opening_balances || [])
 const guaranteeRequests = computed(() => data.value?.guarantee_requests || [])
+// Dues and loan instalments due now: paid together on /pay
+const due = computed(() => data.value?.due || [])
+const dueTotal = computed(() => due.value.reduce((t, d) => t + d.amount, 0))
+const payPath = computed(() => (due.value.length > 1 ? '/pay' : { path: '/save', query: { amount: standing.value?.pay } }))
+// Savings split by product, shown when there's more than the regular contributions
+const productBalances = computed(() => (data.value?.balances?.products || []).filter((p) => p.balance > 0.005))
+const meeting = computed(() => data.value?.next_meeting)
+const meetingWhen = (m) => date(m.starts_at, { weekday: 'short', day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' })
 const unread = computed(() => data.value?.unread_notifications || 0)
 const holdUntil = computed(() => {
   const h = data.value?.security_hold_until
@@ -114,6 +122,9 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
         </svg>
         <p class="relative text-sm text-navy-100/75">Your savings</p>
         <p class="money relative mt-0.5 text-[44px] leading-[1.05]">{{ money(data.balances.savings, currency) }}</p>
+        <p v-if="productBalances.length > 1" class="relative mt-1 flex flex-wrap gap-x-3 gap-y-0.5 text-xs text-navy-100/75">
+          <span v-for="p in productBalances" :key="p.product">{{ p.product_name }} <b class="num font-semibold text-white">{{ money(p.balance, currency, { compact: true }) }}</b><Icon v-if="p.locked" name="lock" :size="11" class="ml-0.5 inline align-[-1px]" /></span>
+        </p>
 
         <div v-if="standing" class="relative mt-3 flex items-center gap-2.5 rounded-2xl px-3 py-2.5"
           :class="standing.tone === 'behind' ? 'bg-[#f87171]/20' : 'bg-white/10'">
@@ -123,7 +134,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
             <p class="truncate text-sm font-semibold">{{ standing.title }}</p>
             <p class="truncate text-xs text-navy-100/70">{{ standing.sub }}</p>
           </div>
-          <RouterLink v-if="standing.pay" :to="{ path: '/save', query: { amount: standing.pay } }" class="btn-light btn-sm shrink-0 px-3 py-1.5">Pay</RouterLink>
+          <RouterLink v-if="standing.pay" :to="payPath" class="btn-light btn-sm shrink-0 px-3 py-1.5">Pay</RouterLink>
         </div>
 
         <div class="relative mt-3 grid grid-cols-2 gap-2">
@@ -151,6 +162,14 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
       </section>
 
       <!-- Things waiting on the member -->
+      <RouterLink v-if="due.length > 1" to="/pay" class="card flex items-center gap-3.5 border-brand-text/30 p-4">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-brand-soft text-brand-text"><Icon name="layers" /></span>
+        <div class="min-w-0 flex-1">
+          <p class="text-[15px] font-semibold">{{ money(dueTotal, currency) }} due now</p>
+          <p class="truncate text-xs text-ink-soft">{{ due.map((d) => `${d.label} ${money(d.amount, currency)}`).join(' · ') }}</p>
+        </div>
+        <span class="btn-primary btn-sm">Pay all</span>
+      </RouterLink>
       <section v-if="holdUntil" class="flex gap-3 rounded-3xl bg-warn-soft p-4 text-sm text-warn">
         <Icon name="shield" :size="18" class="mt-0.5" />
         <p>Your password was reset, so payout changes, loans and withdrawals are paused until <b>{{ date(holdUntil, { day: 'numeric', month: 'short', hour: 'numeric', minute: '2-digit' }) }}</b>.</p>
@@ -251,7 +270,7 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
           </div>
           <button class="btn-secondary btn-sm" @click="copyText(data.dedicated_account.account_number, 'Account number copied')"><Icon name="copy" :size="16" /> Copy</button>
         </div>
-        <p class="mt-2 text-xs text-ink-soft">Any transfer to this account is added to your savings automatically.</p>
+        <p class="mt-2 text-xs text-ink-soft">Any transfer to this account is recorded automatically: it pays contributions due first, then loan instalments due, and the rest is saved.</p>
       </section>
 
       <!-- Autosave -->
@@ -274,6 +293,17 @@ onBeforeUnmount(() => document.removeEventListener('visibilitychange', onVisible
       <p v-if="data.autosave?.last_error && !data.autosave?.enabled" class="rounded-2xl bg-neg-soft px-4 py-3 text-sm text-neg">Autosave stopped: {{ data.autosave.last_error }}</p>
 
       <InstallPrompt />
+
+      <!-- Next meeting -->
+      <RouterLink v-if="meeting" :to="`/meetings/${meeting.name}`" class="card flex items-center gap-3.5 p-4">
+        <span class="grid h-11 w-11 shrink-0 place-items-center rounded-2xl bg-info-soft text-info"><Icon name="calendar" /></span>
+        <div class="min-w-0 flex-1">
+          <p class="truncate text-[15px] font-semibold">{{ meeting.title }}</p>
+          <p class="truncate text-xs text-ink-soft">{{ meetingWhen(meeting) }}<span v-if="meeting.venue"> · {{ meeting.venue }}</span></p>
+        </div>
+        <span v-if="meeting.my_response" class="chip" :class="meeting.my_response === 'Coming' ? 'bg-pos-soft text-pos' : 'bg-sunk text-ink-soft'">{{ meeting.my_response === 'Coming' ? 'Coming' : 'Apology sent' }}</span>
+        <span v-else class="btn-secondary btn-sm">Reply</span>
+      </RouterLink>
 
       <!-- Announcement -->
       <RouterLink v-if="latestNews" to="/announcements" class="card block p-4">

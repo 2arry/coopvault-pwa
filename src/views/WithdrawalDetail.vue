@@ -1,7 +1,7 @@
 <script setup>
 import { ref, computed, onMounted } from 'vue'
 import * as api from '../api'
-import { currency, toast, loadDashboard } from '../store'
+import { currency, dashboard, toast, loadDashboard } from '../store'
 import { money, date } from '../format'
 import PageHeader from '../components/PageHeader.vue'
 import StatusPill from '../components/StatusPill.vue'
@@ -61,6 +61,8 @@ onMounted(load)
             <StatusPill :status="w.status" />
           </div>
           <p class="money mt-1 text-[40px] leading-tight">{{ money(w.amount, currency) }}</p>
+          <p v-if="w.leaving" class="text-sm font-semibold">Everything, to leave the group</p>
+          <p v-else-if="(dashboard?.savings_products || []).length > 1 && w.product_name" class="text-sm font-semibold">From {{ w.product_name }}</p>
           <p v-if="w.reason" class="text-sm text-ink-soft">{{ w.reason }}</p>
           <ol class="mt-5 space-y-3">
             <li v-for="s in steps" :key="s.label" class="flex items-center gap-3 text-sm">

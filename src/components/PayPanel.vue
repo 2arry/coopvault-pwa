@@ -14,6 +14,8 @@ import Icon from './Icon.vue'
 const props = defineProps({
   purpose: { type: String, required: true }, // 'Contribution' | 'Loan Repayment'
   loan: String,
+  savingsProduct: String, // Contribution: which savings product (regular contributions when empty)
+  productName: String,
   max: Number,
   initial: [Number, String],
   chips: { type: Array, default: () => [] },
@@ -21,8 +23,11 @@ const props = defineProps({
 const router = useRouter()
 const d = computed(() => dashboard.value)
 const online = computed(() => !!d.value?.payments?.online)
-const dva = computed(() => props.purpose === 'Contribution' && d.value?.dedicated_account?.status === 'Assigned' ? d.value.dedicated_account : null)
-const canAutosave = computed(() => props.purpose === 'Contribution' && d.value?.payments?.autosave && !d.value?.autosave?.enabled && d.value?.standing?.tracked)
+const regular = computed(() => (d.value?.savings_products || []).find((p) => p.kind === 'Regular contributions'))
+const isRegular = computed(() => !props.savingsProduct || props.savingsProduct === regular.value?.name)
+// The account number pays dues first (see Pay what's due), so it's offered for regular contributions only
+const dva = computed(() => props.purpose === 'Contribution' && isRegular.value && d.value?.dedicated_account?.status === 'Assigned' ? d.value.dedicated_account : null)
+const canAutosave = computed(() => props.purpose === 'Contribution' && isRegular.value && d.value?.payments?.autosave && !d.value?.autosave?.enabled && d.value?.standing?.tracked)
 const fees = computed(() => d.value?.payments?.fees)
 const memberPaysFee = computed(() => d.value?.payments?.fee_bearer === 'Member')
 
@@ -58,6 +63,7 @@ async function submit() {
   try {
     const tx = await payWithPaystack({
       cooperative: current.value.cooperative, purpose: props.purpose, amount: value.value, loan: props.loan,
+      savings_product: props.purpose === 'Contribution' ? props.savingsProduct || null : null,
       setup_autosave: autosave.value ? 1 : 0,
     })
     if (!tx) return // closed the popup
@@ -98,7 +104,7 @@ async function submit() {
         <p class="text-sm"><b class="block text-[15px]">Pay securely with Paystack</b><span class="text-ink-soft">Card, bank transfer or USSD. Confirmed the moment it goes through, with a receipt.</span></p>
       </div>
       <div v-if="value >= 100" class="card-flat divide-soft px-4 text-sm">
-        <div class="flex justify-between py-3"><span class="text-ink-soft">{{ purpose === 'Contribution' ? 'Added to your savings' : 'Paid off your loan' }}</span><span class="num font-semibold">{{ money(value, currency) }}</span></div>
+        <div class="flex justify-between py-3"><span class="text-ink-soft">{{ purpose === 'Contribution' ? (isRegular ? 'Added to your savings' : `Added to ${productName}`) : 'Paid off your loan' }}</span><span class="num font-semibold">{{ money(value, currency) }}</span></div>
         <div v-if="memberPaysFee" class="py-3">
           <div class="flex justify-between"><span class="text-ink-soft">Paystack fee</span><span class="num">{{ quote ? money(quote.fee, currency) : '…' }}</span></div>
           <p class="mt-1 text-xs leading-relaxed text-ink-faint">{{ feeRule }}</p>

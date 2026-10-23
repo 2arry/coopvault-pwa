@@ -50,6 +50,11 @@ const shareGroup = () => shareText(groupUpdate(tracker.value, coopName.value, cu
         <Icon name="chevron" :size="18" />
       </button>
 
+      <RouterLink v-if="can('meetings')" to="/meetings" class="card flex items-center gap-3.5 p-4">
+        <span class="grid h-10 w-10 place-items-center rounded-2xl bg-info-soft text-info"><Icon name="calendar" :size="18" /></span>
+        <span class="flex-1"><b class="block text-[15px]">Meetings</b><span class="text-xs text-ink-soft">Call a meeting, take attendance, write the minutes</span></span>
+        <Icon name="chevron" :size="18" class="text-ink-faint" />
+      </RouterLink>
       <RouterLink v-if="can('loans')" to="/admin/loan-book" class="card flex items-center gap-3.5 p-4">
         <span class="grid h-10 w-10 place-items-center rounded-2xl bg-info-soft text-info"><Icon name="loans" :size="18" /></span>
         <span class="flex-1"><b class="block text-[15px]">Loan book</b><span class="text-xs text-ink-soft">What’s out, who’s late, guarantors</span></span>

@@ -19,6 +19,12 @@ const link = computed(() => {
   if (e.type === 'Share-out') return `/share-out/${e.name}`
   return `/receipt/${encodeURIComponent(e.doctype)}/${encodeURIComponent(e.name)}`
 })
+// Voluntary savings name their product ("Saved to Christmas savings")
+const label = computed(() => {
+  const p = props.entry.product
+  if (!p) return meta.value.label
+  return props.entry.type === 'Withdrawal' ? `Took out of ${p}` : `Saved to ${p}`
+})
 const settled = computed(() => ['Confirmed', 'Active', 'Repaid', 'Completed'].includes(props.entry.status))
 const methodLabel = (m) => ({ Paystack: 'Online', 'Bank Transfer': 'Transfer', 'Opening Balance': 'Opening balance' }[m] || m)
 </script>
@@ -29,7 +35,7 @@ const methodLabel = (m) => ({ Paystack: 'Online', 'Bank Transfer': 'Transfer', '
       <Icon :name="meta.icon" :size="18" />
     </div>
     <div class="min-w-0 flex-1">
-      <p class="truncate text-[15px] font-semibold">{{ showName ? `${showName} · ${meta.label.toLowerCase()}` : meta.label }}</p>
+      <p class="truncate text-[15px] font-semibold">{{ showName ? `${showName} · ${label.toLowerCase()}` : label }}</p>
       <p class="truncate text-xs text-ink-soft">{{ date(entry.date, { day: 'numeric', month: 'short' }) }}<span v-if="entry.method"> · {{ methodLabel(entry.method) }}</span></p>
     </div>
     <div class="text-right">

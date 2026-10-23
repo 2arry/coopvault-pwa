@@ -13,6 +13,7 @@ import Sheet from '../../components/Sheet.vue'
 import StatusPill from '../../components/StatusPill.vue'
 import Icon from '../../components/Icon.vue'
 import RecordPayment from '../../components/RecordPayment.vue'
+import AddMember from '../../components/AddMember.vue'
 
 const props = defineProps({ name: String })
 const st = ref(null)
@@ -23,6 +24,7 @@ const opening = ref(false)
 const ob = ref({ amount: '', as_of: today(), note: '' })
 const reset = ref(null)
 const recording = ref(false)
+const setupCode = ref(null)
 // What each role can do, in the members' own words
 const ROLE_INFO = {
   Admin: 'Sets the group up: rules, bank account, roles, approval rules and password resets. Can do everything below.',
@@ -30,6 +32,7 @@ const ROLE_INFO = {
   Accountant: 'Keeps the books: records offline payments, prepares journal entries and the year-end share-out.',
   Treasurer: 'Moves the money: sends approved loans and withdrawals, records offline payments, approves new members.',
   'Loan Officer': 'Reviews loan requests and follows up repayments.',
+  Secretary: 'Calls meetings, takes attendance and keeps the minutes. Can add members and post announcements.',
   Member: 'Saves, borrows and withdraws. No officer powers.',
 }
 
@@ -83,6 +86,12 @@ async function proposeOpening() {
   } catch (e) { toast(e.message, 'error') } finally { busy.value = false }
 }
 
+async function newSetupCode() {
+  busy.value = true
+  try { setupCode.value = await api.post('coop.new_setup_code', { cooperative: current.value.cooperative, member: props.name }) } catch (e) { toast(e.message, 'error') } finally { busy.value = false }
+}
+const products = computed(() => (st.value?.balances?.products || []).filter((p) => p.balance > 0.005))
+
 async function createReset() {
   busy.value = true
   try { reset.value = await api.post('coop.create_reset_code', { cooperative: current.value.cooperative, member: props.name }) } catch (e) { toast(e.message, 'error') } finally { busy.value = false }
@@ -106,6 +115,9 @@ onMounted(load)
             <div><p class="text-xs text-ink-soft">Savings</p><p class="money text-lg">{{ money(st.balances.savings, currency, { compact: true }) }}</p></div>
             <div><p class="text-xs text-ink-soft">Owes</p><p class="money text-lg">{{ money(st.balances.loan_outstanding, currency, { compact: true }) }}</p></div>
             <div><p class="text-xs text-ink-soft">Can borrow</p><p class="money text-lg">{{ money(st.balances.borrow_limit, currency, { compact: true }) }}</p></div>
+          </div>
+          <div v-if="products.length > 1" class="mt-3 flex flex-wrap justify-center gap-x-3 gap-y-0.5 text-xs text-ink-soft">
+            <span v-for="p in products" :key="p.product">{{ p.product_name }} <b class="num text-ink">{{ money(p.balance, currency, { compact: true }) }}</b></span>
           </div>
           <div v-if="s?.tracked" class="mt-4 flex items-center gap-3 rounded-2xl p-3"
             :class="s.state === 'behind' ? 'bg-neg-soft text-neg' : s.state === 'due' ? 'bg-warn-soft text-warn' : 'bg-pos-soft text-pos'">
@@ -163,7 +175,12 @@ onMounted(load)
             </div>
             <p v-if="payoutRecent" class="mt-2 flex gap-2 rounded-2xl bg-warn-soft p-2.5 text-xs text-warn"><Icon name="alert" :size="14" class="mt-0.5" /> Changed {{ relative(member.payout_changed_on) }}. Check with them before sending money.</p>
           </div>
-          <button v-if="can('reset') && !isSelf" class="flex w-full items-center gap-3 p-4 text-left" @click="createReset">
+          <button v-if="member.setup_pending && can('members')" class="flex w-full items-center gap-3 p-4 text-left" :disabled="busy" @click="newSetupCode">
+            <Icon name="userPlus" :size="18" class="text-ink-soft" />
+            <span class="flex-1"><span class="block font-semibold">Send a new setup code</span><span class="block text-xs text-ink-soft">They haven’t set up their account yet</span></span>
+            <Icon name="chevron" :size="18" class="text-ink-faint" />
+          </button>
+          <button v-else-if="can('reset') && !isSelf" class="flex w-full items-center gap-3 p-4 text-left" @click="createReset">
             <Icon name="lock" :size="18" class="text-ink-soft" />
             <span class="flex-1"><span class="block font-semibold">Reset password</span><span class="block text-xs text-ink-soft">Creates a one-time code to give them</span></span>
             <Icon name="chevron" :size="18" class="text-ink-faint" />
@@ -196,6 +213,7 @@ onMounted(load)
       </form>
     </Sheet>
 
+    <AddMember :open="!!setupCode" :code="setupCode" @close="setupCode = null" />
     <RecordPayment :open="recording" :member="member" @close="recording = false" @done="load" />
     <Sheet :open="!!reset" title="Reset code" :subtitle="`Give this to ${reset?.full_name}. It works once and expires in ${reset?.minutes} minutes.`" @close="reset = null">
       <template v-if="reset">

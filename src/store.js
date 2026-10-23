@@ -30,7 +30,7 @@ export const current = computed(() => {
 export const currency = computed(() => current.value?.currency || 'NGN')
 // Officers (any role but Member) see Manage; what each can do there comes from the server's
 // capabilities for their role (settings, pay_out, record, books, journal, close, loans, …)
-export const ROLES = ['Member', 'Treasurer', 'Accountant', 'Loan Officer', 'Chairman', 'Admin']
+export const ROLES = ['Member', 'Treasurer', 'Accountant', 'Loan Officer', 'Secretary', 'Chairman', 'Admin']
 export const isAdmin = computed(() => current.value?.status === 'Active' && !!current.value?.role && current.value.role !== 'Member')
 export const isOwner = computed(() => current.value?.status === 'Active' && current.value?.role === 'Admin')
 export const can = (capability) => current.value?.status === 'Active' && (current.value?.capabilities || []).includes(capability)

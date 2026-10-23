@@ -173,6 +173,23 @@ async function signOut() {
         </div>
       </section>
 
+      <!-- The group -->
+      <section v-if="current?.status === 'Active'">
+        <h2 class="px-1 text-sm font-semibold">{{ current.cooperative_name }}</h2>
+        <div class="card mt-3 divide-soft">
+          <RouterLink to="/meetings" class="flex items-center gap-3.5 p-4">
+            <span class="grid h-10 w-10 place-items-center rounded-2xl bg-info-soft text-info"><Icon name="calendar" :size="18" /></span>
+            <span class="flex-1"><span class="block text-[15px] font-semibold">Meetings</span><span class="block text-xs text-ink-soft">Dates, replies, minutes and resolutions</span></span>
+            <Icon name="chevron" :size="18" class="text-ink-faint" />
+          </RouterLink>
+          <RouterLink to="/announcements" class="flex items-center gap-3.5 p-4">
+            <span class="grid h-10 w-10 place-items-center rounded-2xl bg-accent-soft text-accent-text"><Icon name="bell" :size="18" /></span>
+            <span class="flex-1 text-[15px] font-semibold">Announcements</span>
+            <Icon name="chevron" :size="18" class="text-ink-faint" />
+          </RouterLink>
+        </div>
+      </section>
+
       <!-- Cooperatives -->
       <section>
         <h2 class="px-1 text-sm font-semibold">Cooperatives</h2>
