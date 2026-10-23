@@ -44,7 +44,10 @@ const chips = computed(() => {
 })
 
 onMounted(async () => {
-  try { info.value = await api.get('finance.withdrawal_eligibility', { cooperative: current.value.cooperative }) } catch (e) { error.value = e.message }
+  try {
+    info.value = await api.get('finance.withdrawal_eligibility', { cooperative: current.value.cooperative })
+    productId.value = product.value?.product || ''
+  } catch (e) { error.value = e.message }
 })
 
 async function submit() {

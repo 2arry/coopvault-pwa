@@ -43,7 +43,7 @@ const terms = (p) => [regular(p) ? 'The contribution plan above' : null,
   <section class="space-y-3">
     <div class="flex items-center justify-between">
       <h2 class="section-title">Savings products</h2>
-      <button type="button" class="text-xs font-semibold link" @click="editing = blank()"><Icon name="plus" :size="13" /> New product</button>
+      <button type="button" class="inline-flex items-center gap-1 text-xs font-semibold link" @click="editing = blank()"><Icon name="plus" :size="13" /> New product</button>
     </div>
     <div class="card divide-soft">
       <button v-for="p in products" :key="p.name" type="button" class="flex w-full items-start gap-3 p-4 text-left" @click="editing = { ...p }">

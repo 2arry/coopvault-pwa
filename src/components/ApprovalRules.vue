@@ -64,7 +64,7 @@ async function remove() {
       <div v-for="g in byAction" :key="g.action" class="p-4">
         <div class="flex items-center justify-between">
           <p class="font-semibold">{{ LABELS[g.action] }}</p>
-          <button type="button" class="text-xs font-semibold link" @click="edit(null, g.action)"><Icon name="plus" :size="13" /> Bigger amounts</button>
+          <button type="button" class="inline-flex items-center gap-1 text-xs font-semibold link" @click="edit(null, g.action)"><Icon name="plus" :size="13" /> Bigger amounts</button>
         </div>
         <button v-for="r in g.rules" :key="r.name" type="button" class="mt-2 flex w-full items-start gap-3 rounded-2xl bg-sunk p-3 text-left text-sm" @click="edit(r)">
           <span class="flex-1">

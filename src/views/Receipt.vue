@@ -71,7 +71,7 @@ onMounted(async () => {
           <div class="bg-navy-800 px-6 pb-6 pt-5 text-white">
             <div class="flex items-center justify-between text-xs text-navy-100/70">
               <span class="flex items-center gap-1.5"><img src="/logo.svg" alt="" class="h-5 w-5 rounded" /> {{ r.cooperative_name }}</span>
-              <span>{{ r.kind }}</span>
+              <span>{{ parts.length ? 'Payment' : r.kind }}</span>
             </div>
             <p class="money mt-4 text-[42px] leading-none">{{ money(shown, r.currency) }}</p>
             <p class="mt-2 text-sm text-navy-100/80">{{ r.member_name }}</p>

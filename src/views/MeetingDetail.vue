@@ -2,7 +2,7 @@
 import { ref, computed, onMounted } from 'vue'
 import * as api from '../api'
 import { toast } from '../store'
-import { date, dateTime, relative } from '../format'
+import { date, dateTime } from '../format'
 import PageHeader from '../components/PageHeader.vue'
 import Loader from '../components/Loader.vue'
 import ErrorBox from '../components/ErrorBox.vue'
@@ -69,7 +69,9 @@ async function saveMinutes(publish) {
 async function cancel() {
   if (await act('cancel_meeting', { note: cancelNote.value }, 'Meeting cancelled. Members have been told.')) cancelling.value = false
 }
-const votes = (r) => [r.votes_for != null && `${r.votes_for} for`, r.votes_against != null && `${r.votes_against} against`, r.abstained && `${r.abstained} abstained`].filter(Boolean).join(' · ')
+// Votes are shown only when they were counted (a deferred item usually has none)
+const votes = (r) => (r.votes_for || r.votes_against || r.abstained
+  ? [`${r.votes_for || 0} for`, `${r.votes_against || 0} against`, r.abstained && `${r.abstained} abstained`].filter(Boolean).join(' · ') : '')
 const printPage = () => window.print()
 const outcomeTone = (o) => (o === 'Passed' ? 'bg-pos-soft text-pos' : o === 'Not passed' ? 'bg-neg-soft text-neg' : 'bg-sunk text-ink-soft')
 </script>
@@ -93,7 +95,10 @@ const outcomeTone = (o) => (o === 'Passed' ? 'bg-pos-soft text-pos' : o === 'Not
             <p class="text-xs font-semibold text-ink-soft">Agenda</p>
             <p class="mt-1 whitespace-pre-line text-sm">{{ m.agenda }}</p>
           </div>
-          <p class="mt-4 text-xs text-ink-soft">{{ m.counts.coming }} coming · {{ m.counts.apologies }} apologies · {{ m.counts.members }} members<template v-if="m.status === 'Held'"> · {{ m.counts.present }} were there</template></p>
+          <p class="mt-4 text-xs text-ink-soft">
+            <template v-if="m.status === 'Held'">{{ m.counts.present }} of {{ m.counts.members }} members were there</template>
+            <template v-else>{{ m.counts.coming }} coming · {{ m.counts.apologies }} apologies · {{ m.counts.members }} members</template>
+          </p>
 
           <div v-if="m.can_reply" class="mt-4 grid grid-cols-2 gap-2">
             <button class="btn-sm" :class="m.my_response === 'Coming' ? 'btn-primary' : 'btn-secondary'" :disabled="busy" :aria-pressed="m.my_response === 'Coming'" @click="reply('Coming')"><Icon name="check" :size="16" /> I’ll be there</button>
@@ -147,7 +152,7 @@ const outcomeTone = (o) => (o === 'Passed' ? 'bg-pos-soft text-pos' : o === 'Not
         <section v-if="m.minutes_published" class="card p-5 print:shadow-none">
           <div class="flex items-center justify-between">
             <h2 class="section-title">Minutes</h2>
-            <button class="text-xs font-semibold link print:hidden" @click="printPage"><Icon name="download" :size="13" /> Print or save as PDF</button>
+            <button class="inline-flex items-center gap-1 text-xs font-semibold link print:hidden" @click="printPage"><Icon name="download" :size="13" /> Print or save as PDF</button>
           </div>
           <p class="mt-2 whitespace-pre-line text-sm leading-relaxed">{{ m.minutes }}</p>
           <div v-if="m.resolutions?.length" class="mt-4 space-y-2 border-t border-line/[0.07] pt-3">
@@ -161,7 +166,7 @@ const outcomeTone = (o) => (o === 'Passed' ? 'bg-pos-soft text-pos' : o === 'Not
             </div>
           </div>
           <p v-if="there.length" class="mt-4 text-xs text-ink-soft"><b class="text-ink">Present ({{ there.length }}):</b> {{ there.map((a) => a.member_name).join(', ') }}</p>
-          <p class="mt-3 text-xs text-ink-faint">Published {{ relative(m.published_on) }}<template v-if="m.minutes_by"> by {{ m.minutes_by }}</template> · {{ date(m.published_on) }}</p>
+          <p class="mt-3 text-xs text-ink-faint">Published {{ date(m.published_on) }}<template v-if="m.minutes_by"> by {{ m.minutes_by }}</template></p>
         </section>
         <p v-else-if="m.status === 'Held' && !m.can_manage" class="rounded-3xl bg-sunk p-4 text-sm text-ink-soft">The secretary is writing the minutes. You’ll be told when they’re ready.</p>
       </template>

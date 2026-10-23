@@ -29,7 +29,7 @@ onMounted(async () => {
     plan.value = await api.get('finance.payment_plan', { cooperative: current.value.cooperative })
     const balance = Object.fromEntries(plan.value.loans.map((l) => [l.name, l.balance]))
     lines.value = plan.value.due.map((d) => ({ ...d, on: true, max: d.kind === 'loan' ? balance[d.loan] : null,
-      sub: d.kind === 'loan' ? `${d.loan} · ${money(balance[d.loan], currency.value)} left` : 'Brings your contributions up to date' }))
+      sub: d.kind === 'loan' ? `${money(balance[d.loan], currency.value)} left to repay` : 'Brings your contributions up to date' }))
     const dueProducts = new Set(plan.value.due.filter((d) => d.kind === 'savings').map((d) => d.savings_product))
     extras.value = plan.value.products.filter((p) => !dueProducts.has(p.name)).map((p) => ({ kind: 'savings', savings_product: p.name,
       label: p.kind === 'Regular contributions' ? 'Pay ahead on contributions' : p.product_name, amount: '' }))
@@ -101,7 +101,7 @@ async function pay() {
             <h2 class="section-title">Save extra <span class="font-normal text-ink-faint">(optional)</span></h2>
             <div class="card mt-3 divide-soft">
               <div v-for="(x, i) in extras" :key="x.savings_product" class="flex items-center gap-3 p-4">
-                <Icon name="piggy" :size="20" class="text-pos" />
+                <span class="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-pos-soft text-pos"><Icon name="arrowDown" :size="17" /></span>
                 <label :for="`extra-${i}`" class="min-w-0 flex-1 text-[15px] font-semibold">{{ x.label }}</label>
                 <input :id="`extra-${i}`" v-model="x.amount" type="number" inputmode="decimal" min="0" step="0.01" placeholder="0" class="input num w-32 py-2 text-right" />
               </div>
@@ -110,7 +110,7 @@ async function pay() {
 
           <div v-if="total > 0" class="card-flat divide-soft px-4 text-sm">
             <div v-for="(c, i) in chosen" :key="i" class="flex justify-between py-2.5">
-              <span class="text-ink-soft">{{ c.kind === 'loan' ? `Loan ${c.loan}` : [...lines, ...extras].find((l) => l.savings_product === c.savings_product)?.label }}</span>
+              <span class="text-ink-soft">{{ [...lines, ...extras].find((l) => (c.kind === 'loan' ? l.loan === c.loan : l.savings_product === c.savings_product))?.label }}</span>
               <span class="num">{{ money(c.amount, currency) }}</span>
             </div>
             <div v-if="memberPaysFee" class="py-3">
